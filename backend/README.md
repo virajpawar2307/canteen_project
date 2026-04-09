@@ -48,4 +48,5 @@ CLIENT_URLS=https://your-app.vercel.app,https://your-preview.vercel.app
   - `NODE_ENV=production`
   - `CLIENT_URLS=https://<your-vercel-domain>`
 5. Deploy and verify health endpoint:
+  - `https://<your-render-service>.onrender.com/health`
   - `https://<your-render-service>.onrender.com/api/health`
