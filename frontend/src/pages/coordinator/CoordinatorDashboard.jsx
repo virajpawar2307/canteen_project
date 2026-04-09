@@ -26,6 +26,19 @@ const getTodayLocalDate = () => {
   return `${now.getFullYear()}-${month}-${day}`;
 };
 
+const toDateKey = (dateText = '') => {
+  const match = String(dateText || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  return year * 10000 + month * 100 + day;
+};
+
 const OTHER_CATEGORY_VALUE = 'Other';
 
 const EXAM_CATEGORY_OPTIONS = [
@@ -155,11 +168,11 @@ const CoordinatorDashboard = () => {
 
   // --- LOGIC FUNCTIONS ---
   const getVoucherStatus = (fromDate, toDate) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
-    return (today >= start && today <= end) ? 'Active' : 'Inactive';
+    const todayKey = toDateKey(getTodayLocalDate());
+    const startKey = toDateKey(fromDate);
+    const endKey = toDateKey(toDate);
+    if (!todayKey || !startKey || !endKey) return 'Inactive';
+    return todayKey >= startKey && todayKey <= endKey ? 'Active' : 'Inactive';
   };
 
   const handleDelete = async (idToRemove) => {
