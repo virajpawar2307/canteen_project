@@ -12,11 +12,13 @@ const canteenRoutes = require('./routes/canteen.routes');
 
 const app = express();
 
+const normalizeOrigin = (origin = '') => origin.trim().replace(/\/$/, '');
+
 const parseAllowedOrigins = () => {
   const origins = process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173';
   return origins
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => normalizeOrigin(origin))
     .filter(Boolean);
 };
 
@@ -30,7 +32,7 @@ app.use(
         return;
       }
 
-      callback(null, allowedOrigins.includes(origin));
+      callback(null, allowedOrigins.includes(normalizeOrigin(origin)));
     },
     credentials: true,
   })
