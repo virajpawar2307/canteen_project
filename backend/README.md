@@ -1,45 +1,50 @@
-# Canteen Backend (MERN)
+# Canteen Backend
 
-Node.js + Express + MongoDB backend scaffold for the canteen project.
+Node.js + Express + MongoDB backend for the canteen project.
 
-## Installed dependencies
+## Local setup
 
-- express
-- mongoose
-- cors
-- dotenv
-- bcryptjs
-- jsonwebtoken
-- cookie-parser
-- morgan
-- helmet
-- express-validator
-- nodemon (dev)
+1. Create `.env` from `.env.example`.
+2. Fill in required values.
+3. Install packages and run:
 
-## Project structure
+```bash
+npm install
+npm run dev
+```
 
-backend/
-  src/
-    app.js
-    server.js
-    config/
-      db.js
-    routes/
-      health.routes.js
-    controllers/
-    models/
-    middlewares/
-    utils/
+## Environment variables
 
-## Setup
+- `PORT`: backend port (Render provides this automatically)
+- `MONGO_URI`: MongoDB connection string
+- `JWT_SECRET`: secret used to sign auth tokens
+- `NODE_ENV`: `development` or `production`
+- `CLIENT_URL`: single frontend origin (kept for backward compatibility)
+- `CLIENT_URLS`: comma-separated list of allowed frontend origins for CORS
 
-1. Create an environment file from `.env.example`:
-   - Windows PowerShell: `Copy-Item .env.example .env`
-2. Update environment values in `.env`.
-3. Run dev server:
-   - `npm run dev`
+Example:
+
+```env
+CLIENT_URLS=https://your-app.vercel.app,https://your-preview.vercel.app
+```
 
 ## Scripts
 
-- `npm run dev` - start with nodemon
-- `npm start` - start with node
+- `npm run dev`: start with nodemon
+- `npm start`: start with Node.js
+
+## Render deployment (Free plan)
+
+1. Create a new Web Service on Render.
+2. Connect your repository.
+3. Use these settings:
+  - Root Directory: `backend`
+  - Build Command: `npm install`
+  - Start Command: `npm start`
+4. Add environment variables in Render dashboard:
+  - `MONGO_URI`
+  - `JWT_SECRET`
+  - `NODE_ENV=production`
+  - `CLIENT_URLS=https://<your-vercel-domain>`
+5. Deploy and verify health endpoint:
+  - `https://<your-render-service>.onrender.com/api/health`

@@ -12,9 +12,26 @@ const canteenRoutes = require('./routes/canteen.routes');
 
 const app = express();
 
+const parseAllowedOrigins = () => {
+  const origins = process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173';
+  return origins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
+const allowedOrigins = parseAllowedOrigins();
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, allowedOrigins.includes(origin));
+    },
     credentials: true,
   })
 );
@@ -33,5 +50,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/coordinator', coordinatorRoutes);
 app.use('/api/examiner', examinerRoutes);
 app.use('/api/canteen', canteenRoutes);
+
+app.use((err, _req, res, _next) => {
+  if (err) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+
+  return res.status(500).json({ message: 'Unknown server error' });
+});
 
 module.exports = app;

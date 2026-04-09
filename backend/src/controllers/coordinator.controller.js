@@ -194,6 +194,20 @@ const clearDepartmentVouchers = async (req, res) => {
   return res.status(200).json({ message: 'Department vouchers cleared', deletedCount: result.deletedCount });
 };
 
+const getCoordinatorExternalVouchers = async (req, res) => {
+  const deptCode = getDepartmentCode(req);
+
+  const externalVouchers = await GuestPass.find({ dept: deptCode })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return res.status(200).json({
+    department: deptCode,
+    departmentLabel: DEPT_LABELS[deptCode] || deptCode.toUpperCase(),
+    externalVouchers,
+  });
+};
+
 const getCoordinatorReportData = async (req, res) => {
   const deptCode = getDepartmentCode(req);
   const { startDate, endDate, examinerType } = req.query;
@@ -253,5 +267,6 @@ module.exports = {
   bulkCreateVouchers,
   deleteVoucher,
   clearDepartmentVouchers,
+  getCoordinatorExternalVouchers,
   getCoordinatorReportData,
 };

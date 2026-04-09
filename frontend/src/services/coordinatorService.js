@@ -25,6 +25,11 @@ export const clearCoordinatorVouchers = async () => {
   return response.data;
 };
 
+export const getCoordinatorExternalVouchers = async () => {
+  const response = await apiClient.get('/coordinator/external-vouchers');
+  return response.data;
+};
+
 export const getCoordinatorReportData = async (params) => {
   const response = await apiClient.get('/coordinator/reports', { params });
   return response.data;
