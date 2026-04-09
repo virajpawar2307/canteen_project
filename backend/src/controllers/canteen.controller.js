@@ -3,6 +3,11 @@ const { validationResult } = require('express-validator');
 const CanteenSetting = require('../models/CanteenSetting');
 const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
+const {
+  formatDateInAppOffset,
+  formatTimeInAppOffset,
+  parseDateBoundsInAppOffset,
+} = require('../utils/timezone');
 
 const PRICE_LIMITS = {
   Breakfast: 50,
@@ -20,9 +25,7 @@ const DEPT_LABELS = {
 };
 
 const parseDateBounds = (startDate, endDate) => {
-  const start = new Date(`${startDate}T00:00:00`);
-  const end = new Date(`${endDate}T23:59:59.999`);
-  return { start, end };
+  return parseDateBoundsInAppOffset(startDate, endDate);
 };
 
 const mapOrder = (order) => ({
@@ -32,8 +35,8 @@ const mapOrder = (order) => ({
   items: order.items.map((i) => `${i.qty}x ${i.name}`).join(', '),
   itemsCount: order.items.reduce((sum, item) => sum + item.qty, 0),
   amount: order.amount,
-  time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  date: new Date(order.createdAt).toISOString().split('T')[0],
+  time: formatTimeInAppOffset(order.createdAt),
+  date: formatDateInAppOffset(order.createdAt),
   createdAt: order.createdAt,
   dept: DEPT_LABELS[order.dept] || order.dept || 'N/A',
   deptCode: order.dept || null,

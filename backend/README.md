@@ -19,6 +19,7 @@ npm run dev
 - `MONGO_URI`: MongoDB connection string
 - `JWT_SECRET`: secret used to sign auth tokens
 - `NODE_ENV`: `development` or `production`
+- `APP_UTC_OFFSET_MINUTES`: timezone offset in minutes used for slot checks and report/order timing (`330` for IST)
 - `CLIENT_URL`: single frontend origin (kept for backward compatibility)
 - `CLIENT_URLS`: comma-separated list of allowed frontend origins for CORS
 

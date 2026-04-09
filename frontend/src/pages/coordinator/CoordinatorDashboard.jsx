@@ -19,6 +19,13 @@ import {
   getCoordinatorReportData,
 } from '../../services/coordinatorService';
 
+const getTodayLocalDate = () => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+};
+
 const CoordinatorDashboard = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -40,8 +47,8 @@ const CoordinatorDashboard = () => {
 
   // 3. Report Filter States
   const [reportFilters, setReportFilters] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: getTodayLocalDate(),
+    endDate: getTodayLocalDate(),
     department: 'CE',
     examinerType: 'Both (Internal & External)',
   });
@@ -119,7 +126,9 @@ const CoordinatorDashboard = () => {
     const text = String(value).trim();
     const jsDate = new Date(text);
     if (!Number.isNaN(jsDate.getTime())) {
-      return jsDate.toISOString().split('T')[0];
+      const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+      const day = String(jsDate.getDate()).padStart(2, '0');
+      return `${jsDate.getFullYear()}-${month}-${day}`;
     }
 
     // Keep source text if it cannot be parsed; backend accepts string dates.

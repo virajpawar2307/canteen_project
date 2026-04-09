@@ -5,6 +5,7 @@ const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
 const Voucher = require('../models/Voucher');
 const CanteenSetting = require('../models/CanteenSetting');
+const { formatTimeInAppOffset, getCurrentMinutesInAppOffset } = require('../utils/timezone');
 
 const DEFAULT_CATEGORY_SETTINGS = {
   Breakfast: { status: true, fromTime: '08:30', toTime: '10:30' },
@@ -19,18 +20,17 @@ const toMinutes = (hhmm = '') => {
   return hh * 60 + mm;
 };
 
-const isTimeWithinSlot = (fromTime, toTime, now = new Date()) => {
+const isTimeWithinSlot = (fromTime, toTime, currentMinutes = getCurrentMinutesInAppOffset()) => {
   const start = toMinutes(fromTime);
   const end = toMinutes(toTime);
   if (start === null || end === null) return false;
 
-  const current = now.getHours() * 60 + now.getMinutes();
   if (start <= end) {
-    return current >= start && current <= end;
+    return currentMinutes >= start && currentMinutes <= end;
   }
 
   // Supports overnight slots, if configured in future.
-  return current >= start || current <= end;
+  return currentMinutes >= start || currentMinutes <= end;
 };
 
 const formatSlot = (fromTime, toTime) => `${fromTime} - ${toTime}`;
@@ -56,14 +56,14 @@ const getResolvedCategorySettings = async () => {
     ...(stored?.categorySettings || {}),
   };
 
-  const now = new Date();
+  const currentMinutes = getCurrentMinutesInAppOffset();
   const resolved = {};
   for (const category of Object.keys(merged)) {
     const setting = merged[category] || {};
     const configuredStatus = setting.status !== false;
     const fromTime = setting.fromTime || DEFAULT_CATEGORY_SETTINGS[category]?.fromTime || '00:00';
     const toTime = setting.toTime || DEFAULT_CATEGORY_SETTINGS[category]?.toTime || '23:59';
-    const inWindow = isTimeWithinSlot(fromTime, toTime, now);
+    const inWindow = isTimeWithinSlot(fromTime, toTime, currentMinutes);
 
     resolved[category] = {
       status: configuredStatus && inWindow,
@@ -108,7 +108,7 @@ const getExaminerOrders = async (req, res) => {
 
   const mapped = orders.map((order) => ({
     id: order.orderId,
-    time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    time: formatTimeInAppOffset(order.createdAt),
     items: buildItemsText(order.items),
     amount: order.amount,
     status: order.status,
@@ -175,7 +175,7 @@ const placeExaminerOrder = async (req, res) => {
   return res.status(201).json({
     order: {
       id: created.orderId,
-      time: new Date(created.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: formatTimeInAppOffset(created.createdAt),
       items: buildItemsText(created.items),
       amount: created.amount,
       status: created.status,

@@ -3,6 +3,11 @@ const { validationResult } = require('express-validator');
 const GuestPass = require('../models/GuestPass');
 const Voucher = require('../models/Voucher');
 const Order = require('../models/Order');
+const {
+  formatDateInAppOffset,
+  formatTimeInAppOffset,
+  parseDateBoundsInAppOffset,
+} = require('../utils/timezone');
 
 const DEPT_LABELS = {
   ce: 'Computer Engineering (CE)',
@@ -15,9 +20,7 @@ const DEPT_LABELS = {
 const getDepartmentCode = (req) => (req.user.department || '').toLowerCase();
 
 const parseDateBounds = (startDate, endDate) => {
-  const start = new Date(`${startDate}T00:00:00`);
-  const end = new Date(`${endDate}T23:59:59.999`);
-  return { start, end };
+  return parseDateBoundsInAppOffset(startDate, endDate);
 };
 
 const resolveDepartmentFromCode = async (voucherCode) => {
@@ -39,8 +42,8 @@ const mapOrderForReport = (order) => ({
   items: order.items.map((i) => `${i.qty}x ${i.name}`).join(', '),
   itemsCount: order.items.reduce((sum, item) => sum + item.qty, 0),
   amount: order.amount,
-  date: new Date(order.createdAt).toISOString().split('T')[0],
-  time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  date: formatDateInAppOffset(order.createdAt),
+  time: formatTimeInAppOffset(order.createdAt),
   status: order.status,
 });
 
