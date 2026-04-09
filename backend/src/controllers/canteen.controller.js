@@ -3,6 +3,8 @@ const { validationResult } = require('express-validator');
 const CanteenSetting = require('../models/CanteenSetting');
 const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
+const Voucher = require('../models/Voucher');
+const GuestPass = require('../models/GuestPass');
 const {
   formatDateInAppOffset,
   formatTimeInAppOffset,
@@ -28,6 +30,67 @@ const parseDateBounds = (startDate, endDate) => {
   return parseDateBoundsInAppOffset(startDate, endDate);
 };
 
+const normalizeSubjectName = (subjectName = '') => String(subjectName || '').trim();
+
+const getSubjectFromVoucherRecord = (voucher) => {
+  const direct = normalizeSubjectName(voucher?.subjectName);
+  if (direct) return direct;
+
+  // Backward compatibility for old records where subject was stored in items.
+  const legacy = normalizeSubjectName(voucher?.items);
+  return legacy || 'N/A';
+};
+
+const buildOrderLookups = async (orders) => {
+  const voucherCodes = [...new Set(orders.map((order) => order.voucherCode).filter(Boolean))];
+
+  const [vouchers, guestPasses] = await Promise.all([
+    Voucher.find({ code: { $in: voucherCodes } }).select('code dept subjectName items').lean(),
+    GuestPass.find({ code: { $in: voucherCodes } }).select('code dept subjectName createdByVoucherCode').lean(),
+  ]);
+
+  const voucherByCode = new Map(vouchers.map((voucher) => [voucher.code, voucher]));
+  const guestByCode = new Map(guestPasses.map((pass) => [pass.code, pass]));
+
+  const creatorVoucherCodes = [
+    ...new Set(guestPasses.map((pass) => pass.createdByVoucherCode).filter((code) => code && !voucherByCode.has(code))),
+  ];
+
+  let creatorVoucherByCode = new Map();
+  if (creatorVoucherCodes.length > 0) {
+    const creatorVouchers = await Voucher.find({ code: { $in: creatorVoucherCodes } })
+      .select('code subjectName items')
+      .lean();
+    creatorVoucherByCode = new Map(creatorVouchers.map((voucher) => [voucher.code, voucher]));
+  }
+
+  return { voucherByCode, guestByCode, creatorVoucherByCode };
+};
+
+const resolveOrderSubjectName = (order, lookups) => {
+  const { voucherByCode, guestByCode, creatorVoucherByCode } = lookups;
+
+  if (order.voucherType === 'Internal') {
+    return getSubjectFromVoucherRecord(voucherByCode.get(order.voucherCode));
+  }
+
+  const guestPass = guestByCode.get(order.voucherCode);
+  const guestSubject = normalizeSubjectName(guestPass?.subjectName);
+  if (guestSubject) return guestSubject;
+
+  const creatorVoucher = voucherByCode.get(guestPass?.createdByVoucherCode) || creatorVoucherByCode.get(guestPass?.createdByVoucherCode);
+  return getSubjectFromVoucherRecord(creatorVoucher);
+};
+
+const resolveOrderDept = (order, lookups) => {
+  if (order.dept) return order.dept;
+
+  const voucherDept = lookups.voucherByCode.get(order.voucherCode)?.dept;
+  if (voucherDept) return voucherDept;
+
+  return lookups.guestByCode.get(order.voucherCode)?.dept || null;
+};
+
 const mapOrder = (order) => ({
   id: order.orderId,
   name: order.examinerName,
@@ -37,6 +100,7 @@ const mapOrder = (order) => ({
   amount: order.amount,
   time: formatTimeInAppOffset(order.createdAt),
   date: formatDateInAppOffset(order.createdAt),
+  subjectName: order.subjectName || 'N/A',
   createdAt: order.createdAt,
   dept: DEPT_LABELS[order.dept] || order.dept || 'N/A',
   deptCode: order.dept || null,
@@ -161,7 +225,15 @@ const getReportData = async (req, res) => {
 
   const orders = await Order.find({ createdAt: { $gte: start, $lte: end } }).lean();
 
-  const filtered = orders.filter((order) => {
+  const lookups = await buildOrderLookups(orders);
+
+  const enrichedOrders = orders.map((order) => ({
+    ...order,
+    dept: resolveOrderDept(order, lookups),
+    subjectName: resolveOrderSubjectName(order, lookups),
+  }));
+
+  const filtered = enrichedOrders.filter((order) => {
     const deptLabel = DEPT_LABELS[order.dept] || order.dept || 'N/A';
     const deptOk = !department || department === 'All Departments' || deptLabel === department;
     const typeOk = !examinerType || examinerType === 'Both (Internal & External)' || order.voucherType === examinerType;

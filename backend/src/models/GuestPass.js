@@ -8,6 +8,7 @@ const guestPassSchema = new mongoose.Schema(
     phone: { type: String, required: true, trim: true },
     fromDate: { type: String, required: true },
     toDate: { type: String, required: true },
+    subjectName: { type: String, default: 'N/A', trim: true },
     createdByVoucherCode: { type: String, required: true, uppercase: true, trim: true },
     createdByName: { type: String, required: true, trim: true },
     dept: { type: String, default: null, lowercase: true, trim: true },

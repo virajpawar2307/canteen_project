@@ -23,16 +23,65 @@ const parseDateBounds = (startDate, endDate) => {
   return parseDateBoundsInAppOffset(startDate, endDate);
 };
 
-const resolveDepartmentFromCode = async (voucherCode) => {
-  if (!voucherCode) return null;
+const normalizeSubjectName = (subjectName = '') => String(subjectName || '').trim();
 
-  const voucher = await Voucher.findOne({ code: voucherCode }).select('dept').lean();
-  if (voucher?.dept) return voucher.dept;
+const getSubjectFromVoucherRecord = (voucher) => {
+  const direct = normalizeSubjectName(voucher?.subjectName);
+  if (direct) return direct;
 
-  const guestPass = await GuestPass.findOne({ code: voucherCode }).select('dept').lean();
-  if (guestPass?.dept) return guestPass.dept;
+  // Backward compatibility for old records where subject was stored in items.
+  const legacy = normalizeSubjectName(voucher?.items);
+  return legacy || 'N/A';
+};
 
-  return null;
+const buildOrderLookups = async (orders) => {
+  const voucherCodes = [...new Set(orders.map((order) => order.voucherCode).filter(Boolean))];
+
+  const [vouchers, guestPasses] = await Promise.all([
+    Voucher.find({ code: { $in: voucherCodes } }).select('code dept subjectName items').lean(),
+    GuestPass.find({ code: { $in: voucherCodes } }).select('code dept subjectName createdByVoucherCode').lean(),
+  ]);
+
+  const voucherByCode = new Map(vouchers.map((voucher) => [voucher.code, voucher]));
+  const guestByCode = new Map(guestPasses.map((pass) => [pass.code, pass]));
+
+  const creatorVoucherCodes = [
+    ...new Set(guestPasses.map((pass) => pass.createdByVoucherCode).filter((code) => code && !voucherByCode.has(code))),
+  ];
+
+  let creatorVoucherByCode = new Map();
+  if (creatorVoucherCodes.length > 0) {
+    const creatorVouchers = await Voucher.find({ code: { $in: creatorVoucherCodes } })
+      .select('code subjectName items')
+      .lean();
+    creatorVoucherByCode = new Map(creatorVouchers.map((voucher) => [voucher.code, voucher]));
+  }
+
+  return { voucherByCode, guestByCode, creatorVoucherByCode };
+};
+
+const resolveOrderSubjectName = (order, lookups) => {
+  const { voucherByCode, guestByCode, creatorVoucherByCode } = lookups;
+
+  if (order.voucherType === 'Internal') {
+    return getSubjectFromVoucherRecord(voucherByCode.get(order.voucherCode));
+  }
+
+  const guestPass = guestByCode.get(order.voucherCode);
+  const guestSubject = normalizeSubjectName(guestPass?.subjectName);
+  if (guestSubject) return guestSubject;
+
+  const creatorVoucher = voucherByCode.get(guestPass?.createdByVoucherCode) || creatorVoucherByCode.get(guestPass?.createdByVoucherCode);
+  return getSubjectFromVoucherRecord(creatorVoucher);
+};
+
+const resolveOrderDept = (order, lookups) => {
+  if (order.dept) return order.dept;
+
+  const voucherDept = lookups.voucherByCode.get(order.voucherCode)?.dept;
+  if (voucherDept) return voucherDept;
+
+  return lookups.guestByCode.get(order.voucherCode)?.dept || null;
 };
 
 const mapOrderForReport = (order) => ({
@@ -44,6 +93,7 @@ const mapOrderForReport = (order) => ({
   amount: order.amount,
   date: formatDateInAppOffset(order.createdAt),
   time: formatTimeInAppOffset(order.createdAt),
+  subjectName: order.subjectName || 'N/A',
   status: order.status,
 });
 
@@ -101,7 +151,7 @@ const createManualVoucher = async (req, res) => {
   }
 
   const deptCode = getDepartmentCode(req);
-  const { name, email, phone, fromDate, toDate } = req.body;
+  const { name, email, phone, fromDate, toDate, subjectName } = req.body;
 
   const phoneKey = normalizePhone(phone);
   const existingCodeByPhone = await loadInternalVoucherMapByPhone(deptCode);
@@ -117,6 +167,7 @@ const createManualVoucher = async (req, res) => {
     code,
     fromDate,
     toDate,
+    subjectName: normalizeSubjectName(subjectName) || 'N/A',
     type: 'Internal',
     items: 'Pending',
     amount: 0,
@@ -155,6 +206,7 @@ const bulkCreateVouchers = async (req, res) => {
       code,
       fromDate: entry.fromDate,
       toDate: entry.toDate,
+      subjectName: normalizeSubjectName(entry.subjectName) || normalizeSubjectName(entry.items) || 'N/A',
       type: 'Internal',
       items: entry.items || 'Pending',
       amount: Number.isFinite(entry.amount) ? entry.amount : 0,
@@ -227,17 +279,12 @@ const getCoordinatorReportData = async (req, res) => {
     .sort({ createdAt: -1 })
     .lean();
 
-  const normalizedOrders = await Promise.all(
-    orders.map(async (order) => {
-      if (order.dept) return order;
-
-      const resolvedDept = await resolveDepartmentFromCode(order.voucherCode);
-      return {
-        ...order,
-        dept: resolvedDept,
-      };
-    })
-  );
+  const lookups = await buildOrderLookups(orders);
+  const normalizedOrders = orders.map((order) => ({
+    ...order,
+    dept: resolveOrderDept(order, lookups),
+    subjectName: resolveOrderSubjectName(order, lookups),
+  }));
 
   const deptOrders = normalizedOrders.filter((order) => (order.dept || '').toLowerCase() === deptCode);
 

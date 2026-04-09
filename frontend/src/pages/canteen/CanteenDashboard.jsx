@@ -369,6 +369,7 @@ const CanteenDashboard = () => {
               table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
               th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 10pt; }
               th { background: #eee; font-weight: bold; }
+              .subject-cell { min-width: 180px; max-width: 260px; white-space: normal; word-break: break-word; }
               .subtotal { text-align: right; font-weight: bold; padding: 10px; border: 1px solid #000; border-top: none; }
               .grand-total { margin-top: 25px; font-weight: bold; font-size: 13pt; display: flex; justify-content: space-between; padding: 10px; border: 2px solid #000; }
             </style>
@@ -393,18 +394,18 @@ const CanteenDashboard = () => {
 
             <div class="section-header">SECTION A: FACULTY CONSUMPTION</div>
             <table>
-              <thead><tr><th>Sr</th><th>Order ID</th><th>Faculty Name</th><th>Department</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Status</th><th>Total (Rs)</th></tr></thead>
+              <thead><tr><th>Sr</th><th>Order ID</th><th>Faculty Name</th><th>Department</th><th>Subject Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Status</th><th>Total (Rs)</th></tr></thead>
               <tbody>
-                ${internal.length > 0 ? internal.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td>${o.dept}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time}</td><td>${o.items}</td><td>${o.status}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="9" style="text-align:center">No Records</td></tr>'}
+                ${internal.length > 0 ? internal.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td>${o.dept}</td><td class="subject-cell">${o.subjectName || 'N/A'}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time}</td><td>${o.items}</td><td>${o.status}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="10" style="text-align:center">No Records</td></tr>'}
               </tbody>
             </table>
             <div class="subtotal">Sub-Total (Faculty): Rs. ${internalTotal}/-</div>
 
             <div class="section-header">SECTION B: GUEST/EXTERNAL CONSUMPTION</div>
             <table>
-              <thead><tr><th>Sr</th><th>Order ID</th><th>Guest Name</th><th>Department</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Status</th><th>Total (Rs)</th></tr></thead>
+              <thead><tr><th>Sr</th><th>Order ID</th><th>Guest Name</th><th>Department</th><th>Subject Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Status</th><th>Total (Rs)</th></tr></thead>
               <tbody>
-                ${external.length > 0 ? external.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td>${o.dept}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time}</td><td>${o.items}</td><td>${o.status}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="9" style="text-align:center">No Records</td></tr>'}
+                ${external.length > 0 ? external.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td>${o.dept}</td><td class="subject-cell">${o.subjectName || 'N/A'}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time}</td><td>${o.items}</td><td>${o.status}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="10" style="text-align:center">No Records</td></tr>'}
               </tbody>
             </table>
             <div class="subtotal">Sub-Total (Guest): Rs. ${externalTotal}/-</div>
@@ -741,6 +742,7 @@ const CanteenDashboard = () => {
                           <th className="px-4 py-3 text-left">Name</th>
                           <th className="px-4 py-3 text-left">Type</th>
                           <th className="px-4 py-3 text-left">Department</th>
+                          <th className="px-4 py-3 text-left">Subject</th>
                           <th className="px-4 py-3 text-left">Date</th>
                           <th className="px-4 py-3 text-left">Time</th>
                           <th className="px-4 py-3 text-left">Items</th>
@@ -755,6 +757,7 @@ const CanteenDashboard = () => {
                             <td className="px-4 py-3 font-bold text-slate-700">{order.name}</td>
                             <td className="px-4 py-3">{order.type}</td>
                             <td className="px-4 py-3">{order.dept}</td>
+                            <td className="px-4 py-3 max-w-[220px] break-words">{order.subjectName || 'N/A'}</td>
                             <td className="px-4 py-3">{order.date}</td>
                             <td className="px-4 py-3">{order.time}</td>
                             <td className="px-4 py-3">{order.items}</td>
@@ -764,7 +767,7 @@ const CanteenDashboard = () => {
                         ))}
                         {(reportData.orders || []).length === 0 && (
                           <tr>
-                            <td colSpan="9" className="px-4 py-6 text-center text-xs font-bold text-slate-500">No report rows found for selected filters.</td>
+                            <td colSpan="10" className="px-4 py-6 text-center text-xs font-bold text-slate-500">No report rows found for selected filters.</td>
                           </tr>
                         )}
                       </tbody>

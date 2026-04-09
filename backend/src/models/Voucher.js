@@ -8,6 +8,7 @@ const voucherSchema = new mongoose.Schema(
     code: { type: String, required: true, trim: true, uppercase: true },
     fromDate: { type: String, required: true },
     toDate: { type: String, required: true },
+    subjectName: { type: String, default: 'N/A', trim: true },
     type: { type: String, enum: ['Internal', 'External'], default: 'Internal' },
     items: { type: String, default: 'Pending' },
     amount: { type: Number, default: 0 },

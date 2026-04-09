@@ -224,6 +224,7 @@ const CoordinatorDashboard = () => {
         .map((row) => {
           const name = getValueByHeaders(row, ['Internal Examiner', 'Name', 'Examiner Name']);
           const phone = getValueByHeaders(row, ['Mobile No.', 'Mobile', 'Phone', 'Phone Number']);
+          const subjectNameRaw = getValueByHeaders(row, ['Subject Name', 'Subject', 'Course Name', 'Paper Name']);
           const fromDateRaw = getValueByHeaders(row, ['From Date', 'FromDate', 'Start Date']);
           const toDateRaw = getValueByHeaders(row, ['End Date', 'To Date', 'ToDate']);
 
@@ -236,9 +237,10 @@ const CoordinatorDashboard = () => {
             phone: String(phone || 'N/A').trim(),
             fromDate,
             toDate,
+            subjectName: String(subjectNameRaw || '').trim() || 'N/A',
             type: 'Internal',
             amount: 0,
-            items: getValueByHeaders(row, ['Subject Name', 'Items Consumed']) || 'Pending',
+            items: 'Pending',
             date: fromDate,
             category: selectedCategory,
           };
@@ -365,6 +367,7 @@ const CoordinatorDashboard = () => {
             table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
             th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 10pt; }
             th { background: #eee; font-weight: bold; }
+            .subject-cell { min-width: 180px; max-width: 260px; white-space: normal; word-break: break-word; }
             .subtotal { text-align: right; font-weight: bold; padding: 10px; border: 1px solid #000; border-top: none; }
             .grand-total { margin-top: 25px; font-weight: bold; font-size: 13pt; display: flex; justify-content: space-between; padding: 10px; border: 2px solid #000; }
           </style>
@@ -389,18 +392,18 @@ const CoordinatorDashboard = () => {
 
           <div class="section-header">SECTION A: FACULTY CONSUMPTION</div>
           <table>
-            <thead><tr><th>Sr</th><th>Order ID</th><th>Faculty Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Total (Rs)</th></tr></thead>
+            <thead><tr><th>Sr</th><th>Order ID</th><th>Faculty Name</th><th>Subject Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Total (Rs)</th></tr></thead>
             <tbody>
-              ${internal.length > 0 ? internal.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time || ''}</td><td>${o.items}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="7" style="text-align:center">No Records</td></tr>'}
+              ${internal.length > 0 ? internal.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td class="subject-cell">${o.subjectName || 'N/A'}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time || ''}</td><td>${o.items}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="8" style="text-align:center">No Records</td></tr>'}
             </tbody>
           </table>
           <div class="subtotal">Sub-Total (Faculty): Rs. ${internalTotal}/-</div>
 
           <div class="section-header">SECTION B: GUEST/EXTERNAL CONSUMPTION</div>
           <table>
-            <thead><tr><th>Sr</th><th>Order ID</th><th>Guest Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Total (Rs)</th></tr></thead>
+            <thead><tr><th>Sr</th><th>Order ID</th><th>Guest Name</th><th>Subject Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Total (Rs)</th></tr></thead>
             <tbody>
-              ${external.length > 0 ? external.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time || ''}</td><td>${o.items}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="7" style="text-align:center">No Records</td></tr>'}
+              ${external.length > 0 ? external.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td class="subject-cell">${o.subjectName || 'N/A'}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time || ''}</td><td>${o.items}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="8" style="text-align:center">No Records</td></tr>'}
             </tbody>
           </table>
           <div class="subtotal">Sub-Total (Guest): Rs. ${externalTotal}/-</div>
@@ -586,14 +589,14 @@ const CoordinatorDashboard = () => {
                 </div>
                 <div className="bg-slate-100 p-2 font-black text-sm border border-slate-900 mb-2 text-left uppercase">SECTION A: FACULTY CONSUMPTION</div>
                 <table className="w-full border-collapse border border-slate-900 mb-2 text-xs">
-                  <thead className="bg-slate-50"><tr><th className="border border-slate-900 p-2 text-center">Sr</th><th className="border border-slate-900 p-2">Order ID</th><th className="border border-slate-900 p-2">Faculty Name</th><th className="border border-slate-900 p-2">Date</th><th className="border border-slate-900 p-2">Time</th><th className="border border-slate-900 p-2">Items Consumed</th><th className="border border-slate-900 p-2 text-right">Total (Rs)</th></tr></thead>
-                  <tbody>{reportData.internal.length > 0 ? reportData.internal.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="7" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
+                  <thead className="bg-slate-50"><tr><th className="border border-slate-900 p-2 text-center">Sr</th><th className="border border-slate-900 p-2">Order ID</th><th className="border border-slate-900 p-2">Faculty Name</th><th className="border border-slate-900 p-2">Subject Name</th><th className="border border-slate-900 p-2">Date</th><th className="border border-slate-900 p-2">Time</th><th className="border border-slate-900 p-2">Items Consumed</th><th className="border border-slate-900 p-2 text-right">Total (Rs)</th></tr></thead>
+                  <tbody>{reportData.internal.length > 0 ? reportData.internal.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2 break-words max-w-[220px]">{o.subjectName || 'N/A'}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="8" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
                 </table>
                 <div className="text-right font-black text-sm p-2 border border-slate-900 border-t-0 mb-6 uppercase">Sub-Total (Faculty): Rs. {reportData.internalTotal}/-</div>
                 <div className="bg-slate-100 p-2 font-black text-sm border border-slate-900 mb-2 text-left uppercase">SECTION B: GUEST/EXTERNAL CONSUMPTION</div>
                 <table className="w-full border-collapse border border-slate-900 mb-2 text-xs">
-                  <thead className="bg-slate-50"><tr><th className="border border-slate-900 p-2 text-center">Sr</th><th className="border border-slate-900 p-2">Order ID</th><th className="border border-slate-900 p-2">Guest Name</th><th className="border border-slate-900 p-2">Date</th><th className="border border-slate-900 p-2">Time</th><th className="border border-slate-900 p-2">Items Consumed</th><th className="border border-slate-900 p-2 text-right">Total (Rs)</th></tr></thead>
-                  <tbody>{reportData.external.length > 0 ? reportData.external.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="7" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
+                  <thead className="bg-slate-50"><tr><th className="border border-slate-900 p-2 text-center">Sr</th><th className="border border-slate-900 p-2">Order ID</th><th className="border border-slate-900 p-2">Guest Name</th><th className="border border-slate-900 p-2">Subject Name</th><th className="border border-slate-900 p-2">Date</th><th className="border border-slate-900 p-2">Time</th><th className="border border-slate-900 p-2">Items Consumed</th><th className="border border-slate-900 p-2 text-right">Total (Rs)</th></tr></thead>
+                  <tbody>{reportData.external.length > 0 ? reportData.external.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2 break-words max-w-[220px]">{o.subjectName || 'N/A'}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="8" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
                 </table>
                 <div className="text-right font-black text-sm p-2 border border-slate-900 border-t-0 mb-6 uppercase">Sub-Total (Guest): Rs. {reportData.externalTotal}/-</div>
                 <div className="flex justify-between items-center border-2 border-slate-900 p-4 font-black text-lg"><span>GRAND TOTAL</span><span>Rs. {reportData.grandTotal}</span></div>

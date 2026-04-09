@@ -209,6 +209,8 @@ const createGuestPass = async (req, res) => {
   const { voucherCode, voucherName, dept } = req.voucherSession;
   const { name, email, phone, fromDate, toDate } = req.body;
   const guestCode = await generateUniqueGuestCode();
+  const creatorVoucher = await Voucher.findOne({ code: voucherCode }).select('subjectName items').lean();
+  const subjectName = String(creatorVoucher?.subjectName || creatorVoucher?.items || '').trim() || 'N/A';
 
   const created = await GuestPass.create({
     code: guestCode,
@@ -217,6 +219,7 @@ const createGuestPass = async (req, res) => {
     phone,
     fromDate,
     toDate,
+    subjectName,
     createdByVoucherCode: voucherCode,
     createdByName: voucherName,
     dept: dept || null,
