@@ -26,11 +26,29 @@ const getTodayLocalDate = () => {
   return `${now.getFullYear()}-${month}-${day}`;
 };
 
+const OTHER_CATEGORY_VALUE = 'Other';
+
+const EXAM_CATEGORY_OPTIONS = [
+  '1st Year - Regular',
+  '2nd Year - Regular',
+  '3rd Year - Regular',
+  '4th Year - Regular',
+  '1st Year - Backlog',
+  '2nd Year - Backlog',
+  '3rd Year - Backlog',
+  '4th Year - Backlog',
+  'M.E./M.Tech - Regular',
+  'M.E./M.Tech - Backlog',
+  'Ph.D.',
+  OTHER_CATEGORY_VALUE,
+];
+
 const CoordinatorDashboard = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [examYear, setExamYear] = useState('');
+  const [customExamCategory, setCustomExamCategory] = useState('');
   const [dept, setDept] = useState('Department'); 
   const [deptCode, setDeptCode] = useState('CE');
   const [excelFile, setExcelFile] = useState(null);
@@ -190,6 +208,13 @@ const CoordinatorDashboard = () => {
 
   const handleExcelUpload = () => {
     if (!excelFile) return alert("Please attach an Excel file first.");
+
+    const selectedCategory = examYear === OTHER_CATEGORY_VALUE ? customExamCategory.trim() : examYear.trim();
+    if (!selectedCategory) {
+      alert('Please select a category/year before generating vouchers.');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       const workbook = XLSX.read(e.target.result, { type: 'binary' });
@@ -215,6 +240,7 @@ const CoordinatorDashboard = () => {
             amount: 0,
             items: getValueByHeaders(row, ['Subject Name', 'Items Consumed']) || 'Pending',
             date: fromDate,
+            category: selectedCategory,
           };
         })
         .filter((entry) => entry.name && entry.fromDate && entry.toDate);
@@ -429,7 +455,33 @@ const CoordinatorDashboard = () => {
                 <div className="xl:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8">
                   <h3 className="text-xs font-black text-pict-text uppercase tracking-widest mb-8">Bulk Import (Excel)</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <select value={examYear} onChange={(e) => setExamYear(e.target.value)} className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"><option value="">Select Category...</option><option>2nd Year - Regular</option><option>3rd Year - Regular</option><option>4th Year - Regular</option></select>
+                    <div className="space-y-2">
+                      <select
+                        value={examYear}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setExamYear(value);
+                          if (value !== OTHER_CATEGORY_VALUE) {
+                            setCustomExamCategory('');
+                          }
+                        }}
+                        className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"
+                      >
+                        <option value="">Select Category...</option>
+                        {EXAM_CATEGORY_OPTIONS.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                      {examYear === OTHER_CATEGORY_VALUE && (
+                        <input
+                          type="text"
+                          value={customExamCategory}
+                          onChange={(e) => setCustomExamCategory(e.target.value)}
+                          placeholder="Type custom category"
+                          className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"
+                        />
+                      )}
+                    </div>
                     <label className={`flex items-center justify-center gap-3 p-3.5 border-2 border-dashed rounded-2xl cursor-pointer ${excelFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200'}`}><FileSpreadsheet size={20} className="text-pict-blue" /><span className="text-sm font-bold truncate">{excelFile ? excelFile.name : "Attach Spreadsheet"}</span><input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => setExcelFile(e.target.files[0])} /></label>
                   </div>
                   <button onClick={handleExcelUpload} className="w-full bg-pict-blue text-white py-4.5 rounded-2xl font-black text-xs uppercase shadow-xl">Generate Vouchers</button>
