@@ -5,27 +5,35 @@ const { validationResult } = require('express-validator');
 const GuestPass = require('../models/GuestPass');
 const User = require('../models/User');
 const Voucher = require('../models/Voucher');
+const { formatDateInAppOffset } = require('../utils/timezone');
 
 const getRedirectPathByRole = (role) => {
   if (role === 'canteen_manager') return '/canteen';
   return '/coordinator';
 };
 
-const parseDateOnly = (dateText) => {
-  const parsed = new Date(dateText);
-  if (Number.isNaN(parsed.getTime())) return null;
-  parsed.setHours(0, 0, 0, 0);
-  return parsed;
+const parseDateOnlyKey = (dateText) => {
+  const match = String(dateText || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  return year * 10000 + month * 100 + day;
 };
 
 const isVoucherActive = (fromDate, toDate) => {
-  const start = parseDateOnly(fromDate);
-  const end = parseDateOnly(toDate);
+  const start = parseDateOnlyKey(fromDate);
+  const end = parseDateOnlyKey(toDate);
   if (!start || !end) return false;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return today >= start && today <= end;
+  const todayKey = parseDateOnlyKey(formatDateInAppOffset(new Date()));
+  if (!todayKey) return false;
+
+  return todayKey >= start && todayKey <= end;
 };
 
 const pickActiveVoucherRecord = (vouchers = []) => {
