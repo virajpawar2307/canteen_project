@@ -488,7 +488,7 @@ const CanteenDashboard = () => {
       <main className="flex-1 w-full lg:max-w-[calc(100%-18rem)] overflow-y-auto">
         <div className="lg:hidden flex items-center justify-between bg-white px-6 py-4 border-b sticky top-0 z-30 shadow-sm"><img src={LogoImg} className="h-8 w-auto" alt="PICT" /><button onClick={toggleSidebar} className="p-2 bg-pict-blue text-white rounded-lg"><Menu size={24} /></button></div>
 
-        <div className="p-6 md:p-10 lg:p-14 text-left">
+        <div className="p-4 sm:p-6 md:p-10 lg:p-14 text-left">
           {activeTab === 'orders' && (
             <div className="animate-in fade-in">
               <h2 className="text-2xl font-black text-pict-text uppercase mb-8">Order Feed</h2>
@@ -499,34 +499,36 @@ const CanteenDashboard = () => {
                     <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Orders..." className="w-full pl-12 pr-4 py-3 border rounded-xl text-sm font-bold outline-none" />
                   </div>
                 </div>
-                <table className="w-full">
-                  <thead><tr className="border-b text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="px-8 py-5">Order ID</th><th className="px-8">Examiner</th><th className="px-8 text-right">Amount</th><th className="px-8 text-center">Action</th></tr></thead>
-                  <tbody>
-                    {filteredLiveOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-slate-50 border-b border-slate-50">
-                        <td className="px-8 py-6 font-mono text-sm font-black text-pict-blue">{order.id}</td>
-                        <td className="px-8 text-sm font-black">{order.name}</td>
-                        <td className="px-8 text-right font-black text-emerald-600">Rs{order.amount}</td>
-                        <td className="px-8 text-center">
-                          <button
-                            onClick={() => handlePrintAndProcessOrder(order)}
-                            disabled={processingOrderId === order.id}
-                            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase inline-flex items-center gap-1 disabled:opacity-60"
-                          >
-                            <Printer size={12} /> {processingOrderId === order.id ? 'Printing...' : 'Print Receipt'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredLiveOrders.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="px-8 py-8 text-center text-xs font-bold text-slate-500">
-                          No pending orders found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-160">
+                    <thead><tr className="border-b text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="px-8 py-5">Order ID</th><th className="px-8">Examiner</th><th className="px-8 text-right">Amount</th><th className="px-8 text-center">Action</th></tr></thead>
+                    <tbody>
+                      {filteredLiveOrders.map((order) => (
+                        <tr key={order.id} className="hover:bg-slate-50 border-b border-slate-50">
+                          <td className="px-8 py-6 font-mono text-sm font-black text-pict-blue">{order.id}</td>
+                          <td className="px-8 text-sm font-black">{order.name}</td>
+                          <td className="px-8 text-right font-black text-emerald-600">Rs{order.amount}</td>
+                          <td className="px-8 text-center">
+                            <button
+                              onClick={() => handlePrintAndProcessOrder(order)}
+                              disabled={processingOrderId === order.id}
+                              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase inline-flex items-center gap-1 disabled:opacity-60"
+                            >
+                              <Printer size={12} /> {processingOrderId === order.id ? 'Printing...' : 'Print Receipt'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredLiveOrders.length === 0 && (
+                        <tr>
+                          <td colSpan="4" className="px-8 py-8 text-center text-xs font-bold text-slate-500">
+                            No pending orders found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden mt-8">
@@ -534,33 +536,35 @@ const CanteenDashboard = () => {
                   <h3 className="text-xs font-black text-pict-text uppercase tracking-widest">Processed Orders</h3>
                   <span className="text-[10px] font-black text-slate-500 uppercase">{processedOrders.length} Orders</span>
                 </div>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      <th className="px-8 py-4">Order ID</th>
-                      <th className="px-8">Examiner</th>
-                      <th className="px-8">Processed Date</th>
-                      <th className="px-8 text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {processedOrders.map((order) => (
-                      <tr key={order.id} className="border-b border-slate-50">
-                        <td className="px-8 py-4 font-mono text-xs font-black text-slate-700">{order.id}</td>
-                        <td className="px-8 text-xs font-bold text-slate-700">{order.name}</td>
-                        <td className="px-8 text-xs font-bold text-slate-500">{order.date}</td>
-                        <td className="px-8 text-right text-xs font-black text-emerald-700">Rs{order.amount}</td>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-160">
+                    <thead>
+                      <tr className="border-b text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="px-8 py-4">Order ID</th>
+                        <th className="px-8">Examiner</th>
+                        <th className="px-8">Processed Date</th>
+                        <th className="px-8 text-right">Amount</th>
                       </tr>
-                    ))}
-                    {processedOrders.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="px-8 py-8 text-center text-xs font-bold text-slate-500">
-                          No processed orders yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {processedOrders.map((order) => (
+                        <tr key={order.id} className="border-b border-slate-50">
+                          <td className="px-8 py-4 font-mono text-xs font-black text-slate-700">{order.id}</td>
+                          <td className="px-8 text-xs font-bold text-slate-700">{order.name}</td>
+                          <td className="px-8 text-xs font-bold text-slate-500">{order.date}</td>
+                          <td className="px-8 text-right text-xs font-black text-emerald-700">Rs{order.amount}</td>
+                        </tr>
+                      ))}
+                      {processedOrders.length === 0 && (
+                        <tr>
+                          <td colSpan="4" className="px-8 py-8 text-center text-xs font-bold text-slate-500">
+                            No processed orders yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -722,7 +726,7 @@ const CanteenDashboard = () => {
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Department</label><select value={reportFilters.department} onChange={(e) => setReportFilters({ ...reportFilters, department: e.target.value })} className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"><option value="All Departments">All Departments</option><option value="Computer Engineering (CE)">Computer Engineering (CE)</option><option value="Information Technology (IT)">Information Technology (IT)</option><option value="Artificial Intelligence and Data Science (AIDS)">Artificial Intelligence and Data Science (AIDS)</option><option value="Electronics and Computer Engineering (ECE)">Electronics and Computer Engineering (ECE)</option><option value="Electronics and Telecommunication (ENTC)">Electronics and Telecommunication (ENTC)</option></select></div>
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</label><select value={reportFilters.examinerType} onChange={(e) => setReportFilters({ ...reportFilters, examinerType: e.target.value })} className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"><option>Both (Internal & External)</option><option>Internal</option><option>External</option></select></div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button onClick={handleGenerateReport} className="flex-1 border border-pict-blue text-pict-blue py-5 rounded-2xl font-black text-xs uppercase tracking-widest">Generate Detailed Report</button>
                   <button onClick={handleDownloadReport} className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl hover:bg-pict-blue transition-all cursor-pointer">
                     <Download size={18} /> Download PICT Billing Report (PDF)
