@@ -371,6 +371,8 @@ const CanteenDashboard = () => {
       const reportData = await getCanteenReportData(reportFilters);
       setReportData(reportData);
       const { internal, external, internalTotal, externalTotal, grandTotal } = reportData;
+      const totalRows = internal.length + external.length;
+      const keepSignaturesOnFirstPage = totalRows <= 12;
       const generatedAt = new Date().toLocaleString('en-IN', {
         day: '2-digit',
         month: 'short',
@@ -417,11 +419,12 @@ const CanteenDashboard = () => {
               .subtotal { text-align: right; font-size: 14px; font-weight: 800; margin: 6px 0 12px; }
               .grand-wrap { display: flex; justify-content: flex-end; margin: 6px 0 0; }
               .grand-box { border: 2px solid #222; min-width: 220px; display: flex; justify-content: space-between; padding: 6px 10px; font-weight: 800; font-size: 15px; }
-              .signatures { margin-top: auto; padding-top: 14px; border-top: 1px solid #b4b4b4; page-break-inside: avoid; break-inside: avoid-page; }
-              .sign-grid-3 { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; page-break-inside: avoid; break-inside: avoid-page; }
-              .sign-grid-2 { margin-top: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 56px; max-width: 70%; margin-left: auto; margin-right: auto; page-break-inside: avoid; break-inside: avoid-page; }
+              .signatures { padding-top: 18px; border-top: 1px solid #b4b4b4; page-break-inside: avoid; break-inside: avoid-page; margin-top: 24px; }
+              .signatures.keep-first-page { margin-top: auto; }
+              .sign-grid-3 { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 56px; page-break-inside: avoid; break-inside: avoid-page; }
+              .sign-grid-2 { margin-top: 22px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 82px; max-width: 72%; margin-left: auto; margin-right: auto; page-break-inside: avoid; break-inside: avoid-page; }
               .sign { text-align: center; }
-              .sign-line { border-top: 2px solid #4a4a4a; margin-bottom: 5px; }
+              .sign-line { border-top: 2px solid #4a4a4a; margin-bottom: 8px; }
               .sign label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2px; }
               .footer { position: fixed; left: 12mm; right: 12mm; bottom: 6mm; background: #fff; border-top: 1px solid #8a8a8a; padding-top: 5px; text-align: center; font-size: 8px; font-weight: 800; text-transform: uppercase; }
               @media print {
@@ -496,7 +499,7 @@ const CanteenDashboard = () => {
                   </div>
                 </div>
 
-                <div class="signatures">
+                <div class="signatures ${keepSignaturesOnFirstPage ? 'keep-first-page' : ''}">
                   <div class="sign-grid-3">
                     <div class="sign"><div class="sign-line"></div><label>Mess Manager</label></div>
                     <div class="sign"><div class="sign-line"></div><label>Practical Coordinator</label></div>
