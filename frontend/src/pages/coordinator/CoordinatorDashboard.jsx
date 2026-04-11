@@ -501,15 +501,15 @@ const CoordinatorDashboard = () => {
           <style>
             @page { size: A4; margin: 10mm; }
             body { font-family: Arial, sans-serif; font-size: 11px; color: #111; line-height: 1.35; margin: 0; }
-            .sheet { position: relative; border: 1px solid #2f2f2f; padding: 14px 14px 56px; box-sizing: border-box; overflow: hidden; }
+            .sheet { position: relative; border: 1px solid #2f2f2f; padding: 14px 14px 56px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; min-height: 100vh; }
             .watermark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
             .watermark img { width: 390px; opacity: 0.07; }
-            .content { position: relative; z-index: 2; }
+            .content { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; }
             .header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
             .logo { width: 52px; height: 52px; object-fit: contain; }
-            .inst h1 { font-size: 20px; margin: 0; font-weight: 800; letter-spacing: 0.1px; }
-            .inst p { font-size: 12px; margin: 2px 0 0; font-weight: 600; }
-            .title { border: 2px solid #1f3b78; background: #e8efff; text-align: center; font-size: 13px; font-weight: 900; color: #0f254d; padding: 5px 8px; margin: 8px auto 12px; width: 60%; }
+            .inst h1 { font-size: 20px; margin: 0; font-weight: 900; letter-spacing: 0.1px; color: #000; }
+            .inst p { font-size: 12px; margin: 2px 0 0; font-weight: 700; }
+            .title { border: 3px solid #000; background: #000; text-align: center; font-size: 14px; font-weight: 900; color: #fff; padding: 8px 10px; margin: 10px auto 14px; width: 65%; letter-spacing: 0.5px; }
             .meta { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-weight: 800; color: #101010; font-size: 11px; }
             .field-label { font-weight: 900; text-transform: uppercase; color: #000; letter-spacing: 0.25px; }
             .dept-line { margin: 0 0 10px; font-weight: 800; font-size: 11px; color: #101010; }
@@ -530,7 +530,7 @@ const CoordinatorDashboard = () => {
             .subtotal { text-align: right; font-size: 14px; font-weight: 800; margin: 6px 0 12px; }
             .grand-wrap { display: flex; justify-content: flex-end; margin: 6px 0 0; }
             .grand-box { border: 2px solid #222; min-width: 220px; display: flex; justify-content: space-between; padding: 6px 10px; font-weight: 800; font-size: 15px; }
-            .signatures { padding-top: 14px; border-top: 1px solid #b4b4b4; page-break-inside: avoid; break-inside: avoid-page; margin-top: 20px; }
+            .signatures { padding-top: 14px; border-top: 1px solid #b4b4b4; page-break-inside: avoid; break-inside: avoid-page; margin-top: auto; padding-bottom: 10px; }
             .sign-grid-3 { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; page-break-inside: avoid; break-inside: avoid-page; }
             .sign-grid-2 { margin-top: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 48px; max-width: 72%; margin-left: auto; margin-right: auto; page-break-inside: avoid; break-inside: avoid-page; }
             .sign { text-align: center; min-height: 70px; display: flex; flex-direction: column; justify-content: flex-end; }
