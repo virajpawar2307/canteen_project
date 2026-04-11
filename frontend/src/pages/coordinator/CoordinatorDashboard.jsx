@@ -517,7 +517,7 @@ const CoordinatorDashboard = () => {
             .section-head { background: #000; color: #fff; font-weight: 900; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
             table { width: 100%; border-collapse: collapse; table-layout: fixed; }
             th, td { border: 1px solid #565656; padding: 6px 6px; vertical-align: top; }
-            th { background: #000; color: #fff; font-size: 11px; font-weight: 900; }
+            th { background: #3d4a5c; color: #fff; font-size: 11px; font-weight: 900; }
             td { font-size: 10px; }
             thead { display: table-header-group; }
             tr { page-break-inside: avoid; break-inside: avoid-page; }
