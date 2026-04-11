@@ -499,7 +499,7 @@ const CoordinatorDashboard = () => {
       <div className="pointer-events-none absolute left-[-6rem] top-1/3 h-80 w-80 rounded-full bg-cyan-200/25 blur-3xl"></div>
       {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={toggleSidebar} />}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 h-screen bg-[linear-gradient(180deg,_#2D3E8B_0%,_#1F2B66_100%)] text-white flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static shadow-[18px_0_60px_rgba(18,28,74,0.22)] backdrop-blur-xl border-r border-white/10 overflow-hidden`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 h-screen bg-[linear-gradient(180deg,_#2D3E8B_0%,_#1F2B66_100%)] text-white flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 shadow-[18px_0_60px_rgba(18,28,74,0.22)] backdrop-blur-xl border-r border-white/10 overflow-hidden`}>
         <div className="p-8 border-b border-white/10 text-left bg-white/5">
           <div className="flex items-start justify-between gap-3">
             <div className="bg-white p-3 rounded-2xl shadow-lg inline-block mb-4 ring-1 ring-white/15"><img src={LogoImg} className="h-8 w-auto" alt="PICT" /></div>
