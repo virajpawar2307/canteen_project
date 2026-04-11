@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   Upload, Mail, MessageCircle, Trash2, 
   FileSpreadsheet, Users, Ticket, LayoutDashboard, 
-  FileText, LogOut, Menu, X, User, ChevronRight, Hash,
+  FileText, LogOut, Menu, X, User, ChevronRight, Hash, Search,
   Download, Eraser, Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -70,6 +70,8 @@ const CoordinatorDashboard = () => {
   // 1. Data State (Shared for Voucher Management and Report Preview)
   const [examiners, setExaminers] = useState([]);
   const [externalVouchers, setExternalVouchers] = useState([]);
+  const [voucherSearch, setVoucherSearch] = useState('');
+  const [externalVoucherSearch, setExternalVoucherSearch] = useState('');
 
   // 2. Manual Entry State
   const [manualEntry, setManualEntry] = useState({ 
@@ -311,6 +313,24 @@ const CoordinatorDashboard = () => {
     return `${day}-${month}-${year}`;
   };
 
+  const normalizedVoucherSearch = voucherSearch.trim().toLowerCase();
+  const filteredExaminers = examiners.filter((exam) => {
+    if (!normalizedVoucherSearch) return true;
+
+    return [exam.name, exam.code, exam.phone, exam.fromDate, exam.toDate]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(normalizedVoucherSearch));
+  });
+
+  const normalizedExternalVoucherSearch = externalVoucherSearch.trim().toLowerCase();
+  const filteredExternalVouchers = externalVouchers.filter((voucher) => {
+    if (!normalizedExternalVoucherSearch) return true;
+
+    return [voucher.name, voucher.code, voucher.createdByName, voucher.createdByVoucherCode, voucher.phone, voucher.fromDate, voucher.toDate]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(normalizedExternalVoucherSearch));
+  });
+
   const handleGenerateReport = async () => {
     if (!reportFilters.startDate || !reportFilters.endDate) {
       alert('Please choose start and end date.');
@@ -542,6 +562,18 @@ const CoordinatorDashboard = () => {
                     <button onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[10px] font-black uppercase shadow-sm"><Eraser size={14} /> Clear All</button>
                   </div>
                 </div>
+                <div className="px-8 py-4 border-b bg-white">
+                  <div className="relative max-w-md">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={voucherSearch}
+                      onChange={(e) => setVoucherSearch(e.target.value)}
+                      placeholder="Search by name, code, phone..."
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue"
+                    />
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left min-w-[760px]">
                     <thead>
@@ -556,7 +588,7 @@ const CoordinatorDashboard = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {examiners.map(ex => (
+                      {filteredExaminers.map(ex => (
                         <tr key={ex._id} className="hover:bg-slate-50 transition-all">
                           <td className="px-6 py-5"><p className="font-bold text-sm text-pict-text">{ex.name}</p></td>
                           <td className="px-6 font-mono font-black text-xs text-pict-blue uppercase"><Hash size={12} className="inline mr-1" />{ex.code}</td>
@@ -573,10 +605,10 @@ const CoordinatorDashboard = () => {
                           </td>
                         </tr>
                       ))}
-                      {examiners.length === 0 && (
+                      {filteredExaminers.length === 0 && (
                         <tr>
                           <td colSpan="7" className="px-6 py-8 text-center text-xs font-bold text-slate-500">
-                            No vouchers generated yet.
+                            {voucherSearch.trim() ? 'No matching vouchers found.' : 'No vouchers generated yet.'}
                           </td>
                         </tr>
                       )}
@@ -651,6 +683,18 @@ const CoordinatorDashboard = () => {
               </div>
 
               <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-8 py-4 border-b bg-white">
+                  <div className="relative max-w-md">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={externalVoucherSearch}
+                      onChange={(e) => setExternalVoucherSearch(e.target.value)}
+                      placeholder="Search by guest name, code, faculty name..."
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue"
+                    />
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left min-w-[920px]">
                     <thead>
@@ -666,7 +710,7 @@ const CoordinatorDashboard = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {externalVouchers.map((voucher) => (
+                      {filteredExternalVouchers.map((voucher) => (
                         <tr key={voucher._id} className="hover:bg-slate-50 transition-all">
                           <td className="px-6 py-5"><p className="font-bold text-sm text-pict-text">{voucher.name}</p></td>
                           <td className="px-6 font-mono font-black text-xs text-emerald-700 uppercase"><Hash size={12} className="inline mr-1" />{voucher.code}</td>
@@ -678,10 +722,10 @@ const CoordinatorDashboard = () => {
                           <td className="px-6 text-center text-xs font-bold text-slate-600">{voucher.createdAt ? new Date(voucher.createdAt).toLocaleDateString() : 'N/A'}</td>
                         </tr>
                       ))}
-                      {externalVouchers.length === 0 && (
+                      {filteredExternalVouchers.length === 0 && (
                         <tr>
                           <td colSpan="8" className="px-6 py-8 text-center text-xs font-bold text-slate-500">
-                            No external vouchers generated yet.
+                            {externalVoucherSearch.trim() ? 'No matching external vouchers found.' : 'No external vouchers generated yet.'}
                           </td>
                         </tr>
                       )}
