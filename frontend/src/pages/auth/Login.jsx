@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Ticket, User, Lock, ShieldCheck, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Ticket, User, Lock, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import LogoImg from '../../assets/image.png';
+import PictBgImg from '../../assets/pict.JPG';
 import { loginStaff, loginWithVoucher } from '../../services/authService';
 import { clearAuthSession } from '../../utils/auth';
 
@@ -66,51 +67,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] relative overflow-hidden px-4 py-8 sm:px-6 md:py-10 lg:py-12 flex items-center justify-center">
-      <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-pict-blue/8 blur-3xl" />
-      <div className="absolute -bottom-20 -right-16 h-64 w-64 rounded-full bg-pict-blue/10 blur-3xl" />
+    <div
+      className="min-h-screen relative overflow-hidden px-4 py-8 sm:px-6 md:py-10 lg:py-12 flex items-center justify-center bg-cover bg-center"
+      style={{ backgroundImage: `url(${PictBgImg})` }}
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(10,16,44,0.72),rgba(45,62,139,0.63),rgba(15,23,42,0.76))]" />
+      <div className="absolute -top-20 -left-14 h-72 w-72 rounded-full bg-white/14 blur-3xl" />
+      <div className="absolute -bottom-24 -right-12 h-72 w-72 rounded-full bg-cyan-200/16 blur-3xl" />
 
-      <div className="relative w-full max-w-5xl rounded-3xl border border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-[0_30px_80px_rgba(45,62,139,0.14)] overflow-hidden grid grid-cols-1 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="hidden lg:flex bg-pict-blue p-10 xl:p-12 flex-col justify-between relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_55%)]" />
-          <div className="relative">
-            <div className="bg-white/95 p-3 rounded-xl inline-flex items-center shadow-lg mb-10">
-              <img src={LogoImg} className="h-10 w-auto" alt="PICT" />
-            </div>
-
-            <h1 className="text-3xl xl:text-4xl font-black text-white leading-tight tracking-tight">
-              Canteen Management
-              <br />
-              Smart Platform
-            </h1>
-            <p className="text-blue-100/80 text-sm mt-5 max-w-sm leading-relaxed font-medium">
-              Secure access portal for hospitality operations, voucher control, and examination support workflows.
-            </p>
-
-            <div className="mt-10 space-y-4">
-              {['Faculty Hospitality', 'Real-time Reporting', 'Secure Vouchers'].map((item) => (
-                <div key={item} className="flex items-center gap-3 text-white/90 text-xs font-semibold uppercase tracking-wider">
-                  <CheckCircle size={14} className="text-blue-200" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative pt-6 border-t border-white/15">
-            <p className="text-white/60 text-[10px] font-semibold uppercase tracking-[0.2em]">SCTR's PICT Pune • 2026</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 sm:p-8 md:p-10 lg:p-12 flex items-center">
+      <div className="relative w-full max-w-xl rounded-3xl border border-white/30 bg-white/92 backdrop-blur-xl shadow-[0_26px_72px_rgba(4,11,31,0.45)] overflow-hidden">
+        <div className="p-6 sm:p-8 md:p-10 lg:p-11">
           <div className="w-full max-w-md mx-auto">
-            <div className="lg:hidden flex flex-col items-center mb-8">
+            <div className="flex flex-col items-center mb-8">
               <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                 <img src={LogoImg} className="h-11 w-auto" alt="PICT" />
               </div>
             </div>
 
-            <div className="mb-7 text-center lg:text-left">
+            <div className="mb-7 text-center">
               <h2 className="text-2xl md:text-[28px] font-black text-pict-text leading-tight">Welcome Back</h2>
               <p className="text-slate-500 text-sm mt-1.5 font-medium">Sign in to continue to your dashboard.</p>
             </div>
