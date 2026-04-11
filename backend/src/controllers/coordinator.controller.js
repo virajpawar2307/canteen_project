@@ -263,6 +263,27 @@ const getCoordinatorExternalVouchers = async (req, res) => {
   });
 };
 
+const deleteCoordinatorExternalVoucher = async (req, res) => {
+  const deptCode = getDepartmentCode(req);
+  const deleted = await GuestPass.findOneAndDelete({ _id: req.params.id, dept: deptCode });
+
+  if (!deleted) {
+    return res.status(404).json({ message: 'External voucher not found' });
+  }
+
+  return res.status(200).json({ message: 'External voucher deleted' });
+};
+
+const clearCoordinatorExternalVouchers = async (req, res) => {
+  const deptCode = getDepartmentCode(req);
+  const result = await GuestPass.deleteMany({ dept: deptCode });
+
+  return res.status(200).json({
+    message: 'External vouchers cleared',
+    deletedCount: result.deletedCount,
+  });
+};
+
 const getCoordinatorReportData = async (req, res) => {
   const deptCode = getDepartmentCode(req);
   const { startDate, endDate, examinerType } = req.query;
@@ -318,5 +339,7 @@ module.exports = {
   deleteVoucher,
   clearDepartmentVouchers,
   getCoordinatorExternalVouchers,
+  deleteCoordinatorExternalVoucher,
+  clearCoordinatorExternalVouchers,
   getCoordinatorReportData,
 };

@@ -8,6 +8,8 @@ const {
   deleteVoucher,
   clearDepartmentVouchers,
   getCoordinatorExternalVouchers,
+  deleteCoordinatorExternalVoucher,
+  clearCoordinatorExternalVouchers,
   getCoordinatorReportData,
 } = require('../controllers/coordinator.controller');
 const { requireAuth, requireRole } = require('../middlewares/auth');
@@ -33,6 +35,8 @@ router.post('/vouchers/bulk', bulkCreateVouchers);
 router.delete('/vouchers/:id', deleteVoucher);
 router.delete('/vouchers', clearDepartmentVouchers);
 router.get('/external-vouchers', getCoordinatorExternalVouchers);
+router.delete('/external-vouchers/:id', deleteCoordinatorExternalVoucher);
+router.delete('/external-vouchers', clearCoordinatorExternalVouchers);
 router.get('/reports', getCoordinatorReportData);
 
 module.exports = router;

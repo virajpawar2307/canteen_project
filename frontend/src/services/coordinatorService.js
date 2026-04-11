@@ -30,6 +30,16 @@ export const getCoordinatorExternalVouchers = async () => {
   return response.data;
 };
 
+export const deleteCoordinatorExternalVoucher = async (voucherId) => {
+  const response = await apiClient.delete(`/coordinator/external-vouchers/${voucherId}`);
+  return response.data;
+};
+
+export const clearCoordinatorExternalVouchers = async () => {
+  const response = await apiClient.delete('/coordinator/external-vouchers');
+  return response.data;
+};
+
 export const getCoordinatorReportData = async (params) => {
   const response = await apiClient.get('/coordinator/reports', { params });
   return response.data;
