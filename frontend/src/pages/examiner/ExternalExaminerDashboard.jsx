@@ -33,6 +33,7 @@ const ExternalExaminerDashboard = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState({});
   const [myOrders, setMyOrders] = useState([]);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const handleSignOut = () => {
     clearAuthSession();
@@ -133,9 +134,10 @@ const ExternalExaminerDashboard = () => {
   const totalItemsInCart = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
 
   const handlePlaceOrder = async () => {
-    if (cartTotal === 0) return;
+    if (cartTotal === 0 || isPlacingOrder) return;
     const itemsPayload = Object.entries(cart).map(([menuItemId, qty]) => ({ menuItemId, qty }));
 
+    setIsPlacingOrder(true);
     try {
       const response = await placeExaminerOrder(itemsPayload);
       setMyOrders((prev) => [response.order, ...prev]);
@@ -143,6 +145,8 @@ const ExternalExaminerDashboard = () => {
       setActiveTab('orders');
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to place order.');
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -216,8 +220,8 @@ const ExternalExaminerDashboard = () => {
               <span className="text-xs font-bold text-blue-200 uppercase tracking-widest">Total Amount</span>
               <span className="text-3xl font-black">Rs{cartTotal}</span>
             </div>
-            <button disabled={cartTotal === 0} onClick={handlePlaceOrder} className="w-full bg-white text-pict-blue py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-              Generate Order Token
+            <button disabled={cartTotal === 0 || isPlacingOrder} onClick={handlePlaceOrder} className="w-full bg-white text-pict-blue py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+              {isPlacingOrder ? 'Generating...' : 'Generate Order Token'}
             </button>
           </div>
         </div>
@@ -360,8 +364,8 @@ const ExternalExaminerDashboard = () => {
             <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">{totalItemsInCart} Items Selected</p>
             <p className="text-xl font-black">Rs{cartTotal}</p>
           </div>
-          <button onClick={handlePlaceOrder} className="bg-white text-pict-blue px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform cursor-pointer shadow-lg">
-            Place Order
+          <button disabled={isPlacingOrder} onClick={handlePlaceOrder} className="bg-white text-pict-blue px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform cursor-pointer shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">
+            {isPlacingOrder ? 'Placing...' : 'Place Order'}
           </button>
         </div>
       )}

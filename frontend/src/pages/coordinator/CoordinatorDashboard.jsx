@@ -74,6 +74,15 @@ const CoordinatorDashboard = () => {
   const [externalVouchers, setExternalVouchers] = useState([]);
   const [voucherSearch, setVoucherSearch] = useState('');
   const [externalVoucherSearch, setExternalVoucherSearch] = useState('');
+  const [isGeneratingVouchers, setIsGeneratingVouchers] = useState(false);
+  const [isAddingEntry, setIsAddingEntry] = useState(false);
+  const [isClearingVouchers, setIsClearingVouchers] = useState(false);
+  const [deletingVoucherId, setDeletingVoucherId] = useState('');
+  const [isRefreshingExternalVouchers, setIsRefreshingExternalVouchers] = useState(false);
+  const [isClearingExternalVouchers, setIsClearingExternalVouchers] = useState(false);
+  const [deletingExternalVoucherId, setDeletingExternalVoucherId] = useState('');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isExportingReport, setIsExportingReport] = useState(false);
 
   // 2. Manual Entry State
   const [manualEntry, setManualEntry] = useState({ 
@@ -127,11 +136,14 @@ const CoordinatorDashboard = () => {
   }, [activeTab]);
 
   const loadExternalVouchers = async () => {
+    setIsRefreshingExternalVouchers(true);
     try {
       const response = await getCoordinatorExternalVouchers();
       setExternalVouchers(response.externalVouchers || []);
     } catch {
       alert('Failed to load external vouchers. Please try again.');
+    } finally {
+      setIsRefreshingExternalVouchers(false);
     }
   };
 
@@ -181,22 +193,28 @@ const CoordinatorDashboard = () => {
 
   const handleDelete = async (idToRemove) => {
     if(window.confirm("Delete this examiner entry?")) {
+      setDeletingVoucherId(idToRemove);
       try {
         await deleteCoordinatorVoucher(idToRemove);
         setExaminers((prev) => prev.filter((exam) => exam._id !== idToRemove));
       } catch (error) {
         alert(error?.response?.data?.message || 'Failed to delete voucher from database.');
+      } finally {
+        setDeletingVoucherId('');
       }
     }
   };
 
   const handleClearAll = async () => {
     if (window.confirm("Are you sure you want to delete ALL generated vouchers? This cannot be undone.")) {
+      setIsClearingVouchers(true);
       try {
         await clearCoordinatorVouchers();
         await loadCoordinatorData();
       } catch (error) {
         alert(error?.response?.data?.message || 'Failed to clear vouchers from database.');
+      } finally {
+        setIsClearingVouchers(false);
       }
     }
   };
@@ -204,22 +222,28 @@ const CoordinatorDashboard = () => {
   const handleDeleteExternalVoucher = async (voucherId) => {
     if (!window.confirm('Delete this external voucher?')) return;
 
+    setDeletingExternalVoucherId(voucherId);
     try {
       await deleteCoordinatorExternalVoucher(voucherId);
       setExternalVouchers((prev) => prev.filter((voucher) => voucher._id !== voucherId));
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to delete external voucher.');
+    } finally {
+      setDeletingExternalVoucherId('');
     }
   };
 
   const handleClearAllExternalVouchers = async () => {
     if (!window.confirm('Delete ALL external vouchers for your department? This cannot be undone.')) return;
 
+    setIsClearingExternalVouchers(true);
     try {
       await clearCoordinatorExternalVouchers();
       setExternalVouchers([]);
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to clear external vouchers.');
+    } finally {
+      setIsClearingExternalVouchers(false);
     }
   };
 
@@ -254,6 +278,7 @@ const CoordinatorDashboard = () => {
       return;
     }
 
+    setIsGeneratingVouchers(true);
     const reader = new FileReader();
     reader.onload = async (e) => {
       const workbook = XLSX.read(e.target.result, { type: 'binary' });
@@ -288,6 +313,7 @@ const CoordinatorDashboard = () => {
 
       if (newEntries.length === 0) {
         alert('No valid rows found. Please use columns: Internal Examiner, Mobile No., From Date, End Date.');
+        setIsGeneratingVouchers(false);
         return;
       }
 
@@ -299,7 +325,13 @@ const CoordinatorDashboard = () => {
       } catch (error) {
         const message = error?.response?.data?.message || 'Bulk upload failed. Please verify sheet format.';
         alert(message);
+      } finally {
+        setIsGeneratingVouchers(false);
       }
+    };
+    reader.onerror = () => {
+      setIsGeneratingVouchers(false);
+      alert('Failed to read the selected file. Please try again.');
     };
     reader.readAsBinaryString(excelFile);
   };
@@ -309,15 +341,22 @@ const CoordinatorDashboard = () => {
       alert("Please fill all fields.");
       return;
     }
-    const created = await createCoordinatorVoucher(manualEntry);
-    setExaminers((prev) => {
-      const exists = prev.some((voucher) => voucher._id === created._id);
-      if (exists) {
-        return prev.map((voucher) => (voucher._id === created._id ? created : voucher));
-      }
-      return [created, ...prev];
-    });
-    setManualEntry({ name: '', email: '', phone: '', fromDate: '', toDate: '' });
+    setIsAddingEntry(true);
+    try {
+      const created = await createCoordinatorVoucher(manualEntry);
+      setExaminers((prev) => {
+        const exists = prev.some((voucher) => voucher._id === created._id);
+        if (exists) {
+          return prev.map((voucher) => (voucher._id === created._id ? created : voucher));
+        }
+        return [created, ...prev];
+      });
+      setManualEntry({ name: '', email: '', phone: '', fromDate: '', toDate: '' });
+    } catch (error) {
+      alert(error?.response?.data?.message || 'Failed to add entry.');
+    } finally {
+      setIsAddingEntry(false);
+    }
   };
 
   const handleWhatsApp = (exam) => {
@@ -367,6 +406,7 @@ const CoordinatorDashboard = () => {
       return;
     }
 
+    setIsGeneratingReport(true);
     try {
       const data = await getCoordinatorReportData({
         startDate: reportFilters.startDate,
@@ -382,6 +422,8 @@ const CoordinatorDashboard = () => {
       });
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to generate report.');
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 
@@ -391,6 +433,7 @@ const CoordinatorDashboard = () => {
       return;
     }
 
+    setIsExportingReport(true);
     let latest = reportData;
     try {
       const data = await getCoordinatorReportData({
@@ -408,6 +451,7 @@ const CoordinatorDashboard = () => {
       setReportData(latest);
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to fetch latest report before export.');
+      setIsExportingReport(false);
       return;
     }
 
@@ -482,6 +526,7 @@ const CoordinatorDashboard = () => {
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
+      setIsExportingReport(false);
     }, 500);
   };
 
@@ -596,7 +641,7 @@ const CoordinatorDashboard = () => {
                     </div>
                     <label className={`flex items-center justify-center gap-3 p-4 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${excelFile ? 'border-emerald-400 bg-emerald-50 shadow-sm' : 'border-slate-200 bg-slate-50/70 hover:bg-white'}`}><FileSpreadsheet size={20} className="text-pict-blue" /><span className="text-sm font-bold truncate">{excelFile ? excelFile.name : "Attach Spreadsheet"}</span><input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => setExcelFile(e.target.files[0])} /></label>
                   </div>
-                  <button onClick={handleExcelUpload} className="w-full bg-[linear-gradient(135deg,_#2D3E8B_0%,_#4157B3_100%)] text-white py-4.5 rounded-3xl font-black text-xs uppercase shadow-[0_18px_40px_rgba(45,62,139,0.25)] transition-transform active:scale-[0.99]">Generate Vouchers</button>
+                  <button disabled={isGeneratingVouchers} onClick={handleExcelUpload} className="w-full bg-[linear-gradient(135deg,_#2D3E8B_0%,_#4157B3_100%)] text-white py-4.5 rounded-3xl font-black text-xs uppercase shadow-[0_18px_40px_rgba(45,62,139,0.25)] transition-transform active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed">{isGeneratingVouchers ? 'Generating...' : 'Generate Vouchers'}</button>
                 </div>
 
                 <div className="rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] p-8">
@@ -609,7 +654,7 @@ const CoordinatorDashboard = () => {
                       <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">From</p><input type="date" value={manualEntry.fromDate} onChange={e => setManualEntry({...manualEntry, fromDate: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
                       <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">To</p><input type="date" value={manualEntry.toDate} onChange={e => setManualEntry({...manualEntry, toDate: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
                     </div>
-                    <button onClick={handleAddManual} className="w-full border-2 border-pict-blue text-pict-blue py-3.5 rounded-2xl font-black text-[10px] uppercase transition-all hover:bg-pict-blue hover:text-white shadow-sm">Add Entry</button>
+                    <button disabled={isAddingEntry} onClick={handleAddManual} className="w-full border-2 border-pict-blue text-pict-blue py-3.5 rounded-2xl font-black text-[10px] uppercase transition-all hover:bg-pict-blue hover:text-white shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">{isAddingEntry ? 'Adding...' : 'Add Entry'}</button>
                   </div>
                 </div>
               </div>
@@ -619,7 +664,7 @@ const CoordinatorDashboard = () => {
                   <h3 className="text-xs font-black text-pict-text uppercase tracking-widest">Generated Vouchers</h3>
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button onClick={handleDownloadExcel} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-pict-blue uppercase shadow-sm transition-all hover:shadow-md"><Download size={14} /> Download</button>
-                    <button onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-2xl text-[10px] font-black uppercase shadow-sm transition-all hover:bg-red-100"><Eraser size={14} /> Clear Vouchers</button>
+                    <button disabled={isClearingVouchers} onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-2xl text-[10px] font-black uppercase shadow-sm transition-all hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"><Eraser size={14} /> {isClearingVouchers ? 'Clearing...' : 'Clear Vouchers'}</button>
                   </div>
                 </div>
                 <div className="px-8 py-5 border-b border-slate-100 bg-white/80">
@@ -658,7 +703,7 @@ const CoordinatorDashboard = () => {
                           <td className="px-6 text-center"><span className={`text-[9px] font-black px-2 py-1 rounded-full uppercase ${getVoucherStatus(ex.fromDate, ex.toDate) === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>{getVoucherStatus(ex.fromDate, ex.toDate)}</span></td>
                           <td className="px-6">
                             <div className="flex justify-center gap-2">
-                              <button onClick={() => handleDelete(ex._id)} className="p-2 text-red-500 hover:text-red-600 transition-all" title="Delete voucher"><Trash2 size={16} /></button>
+                              <button disabled={deletingVoucherId === ex._id} onClick={() => handleDelete(ex._id)} className="p-2 text-red-500 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed" title="Delete voucher"><Trash2 size={16} /></button>
                               <button onClick={() => handleEmail(ex)} className="p-2 text-slate-400 hover:text-pict-blue transition-all"><Mail size={16}/></button>
                               <button onClick={() => handleWhatsApp(ex)} className="p-2 text-slate-400 hover:text-emerald-600 transition-all"><MessageCircle size={16}/></button>
                             </div>
@@ -684,8 +729,8 @@ const CoordinatorDashboard = () => {
               <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 mb-8">
                 <div><h2 className="text-2xl font-black text-pict-text uppercase tracking-tight">Report Review</h2><p className="text-slate-500 text-sm font-medium italic mt-1">Department-wise records from actual canteen orders.</p></div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                  <button onClick={handleGenerateReport} className="flex items-center gap-2 px-6 py-3 border border-pict-blue text-pict-blue rounded-xl text-xs font-black uppercase tracking-widest shadow-sm">Generate</button>
-                  <button onClick={handleDownloadReport} className="flex items-center gap-2 px-6 py-3 bg-pict-blue text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl"><Download size={16} /> Export PDF</button>
+                  <button disabled={isGeneratingReport} onClick={handleGenerateReport} className="flex items-center gap-2 px-6 py-3 border border-pict-blue text-pict-blue rounded-xl text-xs font-black uppercase tracking-widest shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">{isGeneratingReport ? 'Generating...' : 'Generate'}</button>
+                  <button disabled={isExportingReport} onClick={handleDownloadReport} className="flex items-center gap-2 px-6 py-3 bg-pict-blue text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl disabled:opacity-60 disabled:cursor-not-allowed"><Download size={16} /> {isExportingReport ? 'Exporting...' : 'Export PDF'}</button>
                 </div>
               </div>
 
@@ -738,11 +783,11 @@ const CoordinatorDashboard = () => {
                   <p className="text-slate-500 text-sm font-medium italic mt-1">Guest vouchers generated by faculty for {deptCode} department.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  <button onClick={loadExternalVouchers} className="flex items-center gap-2 px-6 py-3 border border-pict-blue text-pict-blue rounded-xl text-xs font-black uppercase tracking-widest shadow-sm">
-                    Refresh
+                  <button disabled={isRefreshingExternalVouchers} onClick={loadExternalVouchers} className="flex items-center gap-2 px-6 py-3 border border-pict-blue text-pict-blue rounded-xl text-xs font-black uppercase tracking-widest shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                    {isRefreshingExternalVouchers ? 'Refreshing...' : 'Refresh'}
                   </button>
-                  <button onClick={handleClearAllExternalVouchers} className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 border border-red-100 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm">
-                    <Eraser size={14} /> Clear Vouchers
+                  <button disabled={isClearingExternalVouchers} onClick={handleClearAllExternalVouchers} className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 border border-red-100 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                    <Eraser size={14} /> {isClearingExternalVouchers ? 'Clearing...' : 'Clear Vouchers'}
                   </button>
                 </div>
               </div>
@@ -788,8 +833,9 @@ const CoordinatorDashboard = () => {
                           <td className="px-6 text-center text-xs font-bold text-slate-600">{voucher.createdAt ? new Date(voucher.createdAt).toLocaleDateString() : 'N/A'}</td>
                           <td className="px-6 text-center">
                             <button
+                              disabled={deletingExternalVoucherId === voucher._id}
                               onClick={() => handleDeleteExternalVoucher(voucher._id)}
-                              className="p-2 text-red-500 hover:text-red-600 transition-all"
+                              className="p-2 text-red-500 hover:text-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Delete external voucher"
                             >
                               <Trash2 size={16} />

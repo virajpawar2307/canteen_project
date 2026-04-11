@@ -68,6 +68,9 @@ const ExaminerDashboard = () => {
   const [myOrders, setMyOrders] = useState([]);
   const [guestVouchers, setGuestVouchers] = useState([]);
   const [selectedGuestPassForOrder, setSelectedGuestPassForOrder] = useState(null);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isGeneratingGuest, setIsGeneratingGuest] = useState(false);
+  const [deletingGuestId, setDeletingGuestId] = useState('');
 
   const [guestForm, setGuestForm] = useState({
     name: '',
@@ -174,10 +177,11 @@ const ExaminerDashboard = () => {
   const totalItemsInCart = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
 
   const handlePlaceOrder = async () => {
-    if (cartTotal === 0) return;
+    if (cartTotal === 0 || isPlacingOrder) return;
 
     const itemsPayload = Object.entries(cart).map(([menuItemId, qty]) => ({ menuItemId, qty }));
 
+    setIsPlacingOrder(true);
     try {
       const response = await placeExaminerOrder(itemsPayload, selectedGuestPassForOrder?.id);
       setMyOrders((prev) => [response.order, ...prev]);
@@ -191,6 +195,8 @@ const ExaminerDashboard = () => {
       setActiveTab('orders');
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to place order.');
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -202,6 +208,7 @@ const ExaminerDashboard = () => {
       return;
     }
 
+    setIsGeneratingGuest(true);
     try {
       const response = await createGuestPass(guestForm);
       setGuestVouchers((prev) => [response.guestPass, ...prev]);
@@ -209,17 +216,22 @@ const ExaminerDashboard = () => {
       setActiveTab('passes');
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to create guest pass.');
+    } finally {
+      setIsGeneratingGuest(false);
     }
   };
 
   const handleDeleteGuest = async (idToRemove) => {
     if (window.confirm('Revoke this guest pass?')) {
+      setDeletingGuestId(idToRemove);
       try {
         await deleteGuestPass(idToRemove);
         setGuestVouchers((prev) => prev.filter((v) => v.id !== idToRemove));
         setSelectedGuestPassForOrder((prev) => (prev?.id === idToRemove ? null : prev));
       } catch (error) {
         alert(error?.response?.data?.message || 'Failed to delete guest pass.');
+      } finally {
+        setDeletingGuestId('');
       }
     }
   };
@@ -249,7 +261,7 @@ const ExaminerDashboard = () => {
             <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">{totalItemsInCart} Items Selected</p>
             <p className="text-xl font-black">Rs{cartTotal}</p>
           </div>
-          <button onClick={handlePlaceOrder} className="bg-white text-pict-blue px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform cursor-pointer shadow-lg">Place Order</button>
+          <button disabled={isPlacingOrder} onClick={handlePlaceOrder} className="bg-white text-pict-blue px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform cursor-pointer shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">{isPlacingOrder ? 'Placing...' : 'Place Order'}</button>
         </div>
       )}
 
@@ -345,8 +357,8 @@ const ExaminerDashboard = () => {
               <span className="text-xs font-bold text-blue-200 uppercase tracking-widest">Total Amount</span>
               <span className="text-3xl font-black">Rs{cartTotal}</span>
             </div>
-            <button disabled={cartTotal === 0} onClick={handlePlaceOrder} className="w-full bg-white text-pict-blue py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-              Generate Order Token
+            <button disabled={cartTotal === 0 || isPlacingOrder} onClick={handlePlaceOrder} className="w-full bg-white text-pict-blue py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+              {isPlacingOrder ? 'Generating...' : 'Generate Order Token'}
             </button>
           </div>
         </div>
@@ -402,7 +414,7 @@ const ExaminerDashboard = () => {
             <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">To *</label><input type="date" value={guestForm.toDate} onChange={(e) => setGuestForm({ ...guestForm, toDate: e.target.value })} className="w-full mt-1.5 p-4 bg-slate-50 border rounded-2xl text-[11px]" /></div>
           </div>
           <div><label className="text-[10px] font-black text-slate-400 uppercase ml-1">Phone *</label><input type="tel" value={guestForm.phone} onChange={(e) => setGuestForm({ ...guestForm, phone: e.target.value })} className="w-full mt-1.5 p-4 bg-slate-50 border rounded-2xl text-sm font-bold" /></div>
-          <button onClick={handleGenerateGuest} className="w-full bg-slate-900 text-white py-4.5 rounded-2xl font-black text-xs uppercase shadow-xl mt-4 cursor-pointer">Generate Guest Code</button>
+          <button disabled={isGeneratingGuest} onClick={handleGenerateGuest} className="w-full bg-slate-900 text-white py-4.5 rounded-2xl font-black text-xs uppercase shadow-xl mt-4 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">{isGeneratingGuest ? 'Generating...' : 'Generate Guest Code'}</button>
         </div>
       </div>
     </div>
@@ -426,7 +438,7 @@ const ExaminerDashboard = () => {
               <div className="grid grid-cols-2 gap-3 mt-auto">
                 <button onClick={() => handleWhatsApp(guest)} className="flex justify-center items-center gap-2 bg-emerald-50 text-emerald-600 py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer"><MessageCircle size={14} /> Send</button>
                 <button onClick={() => handleStartOrderForGuest(guest)} className="flex justify-center items-center gap-2 bg-blue-50 text-pict-blue py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer"><ShoppingBag size={14} /> Order</button>
-                <button onClick={() => handleDeleteGuest(guest.id)} className="col-span-2 flex justify-center items-center gap-2 bg-red-50 text-red-600 py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer"><Trash2 size={14} /> Revoke</button>
+                <button disabled={deletingGuestId === guest.id} onClick={() => handleDeleteGuest(guest.id)} className="col-span-2 flex justify-center items-center gap-2 bg-red-50 text-red-600 py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"><Trash2 size={14} /> {deletingGuestId === guest.id ? 'Revoking...' : 'Revoke'}</button>
               </div>
             </div>
           </div>

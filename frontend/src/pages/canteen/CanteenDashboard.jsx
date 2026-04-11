@@ -68,6 +68,10 @@ const CanteenDashboard = () => {
     totalOrders: 0,
   });
   const [clockTick, setClockTick] = useState(Date.now());
+  const [isSavingCategoryKey, setIsSavingCategoryKey] = useState('');
+  const [isAddingMenuItem, setIsAddingMenuItem] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
 
   const toMinutes = (hhmm = '') => {
     const [hour, minute] = String(hhmm).split(':').map((n) => Number(n));
@@ -161,22 +165,30 @@ const CanteenDashboard = () => {
   }, []);
 
   const handleTimeChange = async (cat, field, value) => {
+    const actionKey = `${cat}-${field}`;
+    setIsSavingCategoryKey(actionKey);
     const updated = { ...categorySettings, [cat]: { ...categorySettings[cat], [field]: value } };
     setCategorySettings(updated);
     try {
       await updateCanteenCategorySettings(updated);
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to save category timing.');
+    } finally {
+      setIsSavingCategoryKey('');
     }
   };
 
   const toggleCategoryStatus = async (cat) => {
+    const actionKey = `${cat}-status`;
+    setIsSavingCategoryKey(actionKey);
     const updated = { ...categorySettings, [cat]: { ...categorySettings[cat], status: !categorySettings[cat].status } };
     setCategorySettings(updated);
     try {
       await updateCanteenCategorySettings(updated);
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to update category status.');
+    } finally {
+      setIsSavingCategoryKey('');
     }
   };
 
@@ -194,6 +206,7 @@ const CanteenDashboard = () => {
       return;
     }
 
+    setIsAddingMenuItem(true);
     try {
       const data = await createCanteenMenuItem({
         name: newMenuData.name,
@@ -204,6 +217,8 @@ const CanteenDashboard = () => {
       setNewMenuData({ name: '', category: 'Lunch', price: '' });
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to add menu item.');
+    } finally {
+      setIsAddingMenuItem(false);
     }
   };
 
@@ -347,6 +362,7 @@ const CanteenDashboard = () => {
       return;
     }
 
+    setIsDownloadingReport(true);
     try {
       const reportData = await getCanteenReportData(reportFilters);
       setReportData(reportData);
@@ -424,7 +440,11 @@ const CanteenDashboard = () => {
       }, 500);
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to build report.');
+      setIsDownloadingReport(false);
+      return;
     }
+
+    setIsDownloadingReport(false);
   };
 
   const handleGenerateReport = async () => {
@@ -433,11 +453,14 @@ const CanteenDashboard = () => {
       return;
     }
 
+    setIsGeneratingReport(true);
     try {
       const data = await getCanteenReportData(reportFilters);
       setReportData(data);
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to generate report data.');
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 
@@ -581,13 +604,13 @@ const CanteenDashboard = () => {
                         <span className={`text-[9px] font-black px-2 py-1 rounded-full ${isCategoryOpenNow(categorySettings[cat]) ? 'bg-emerald-500 text-white' : 'bg-red-100 text-red-600'}`}>
                           {isCategoryOpenNow(categorySettings[cat]) ? 'OPEN NOW' : 'CLOSED NOW'}
                         </span>
-                        <button onClick={() => toggleCategoryStatus(cat)} className={`text-[9px] font-black px-2 py-1 rounded-full ${categorySettings[cat].status ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+                        <button disabled={Boolean(isSavingCategoryKey)} onClick={() => toggleCategoryStatus(cat)} className={`text-[9px] font-black px-2 py-1 rounded-full ${categorySettings[cat].status ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'} disabled:opacity-60 disabled:cursor-not-allowed`}>
                           {categorySettings[cat].status ? 'ENABLED' : 'DISABLED'}
                         </button>
                       </div>
                     </div>
                     <p className="text-[10px] font-black uppercase tracking-widest mb-2">{cat}</p>
-                    <div className="flex gap-1"><input type="time" value={categorySettings[cat].fromTime} onChange={(e) => handleTimeChange(cat, 'fromTime', e.target.value)} className="w-full text-[10px] border rounded p-1" /><input type="time" value={categorySettings[cat].toTime} onChange={(e) => handleTimeChange(cat, 'toTime', e.target.value)} className="w-full text-[10px] border rounded p-1" /></div>
+                    <div className="flex gap-1"><input disabled={Boolean(isSavingCategoryKey)} type="time" value={categorySettings[cat].fromTime} onChange={(e) => handleTimeChange(cat, 'fromTime', e.target.value)} className="w-full text-[10px] border rounded p-1 disabled:opacity-60 disabled:cursor-not-allowed" /><input disabled={Boolean(isSavingCategoryKey)} type="time" value={categorySettings[cat].toTime} onChange={(e) => handleTimeChange(cat, 'toTime', e.target.value)} className="w-full text-[10px] border rounded p-1 disabled:opacity-60 disabled:cursor-not-allowed" /></div>
                   </div>
                 ))}
               </div>
@@ -597,7 +620,7 @@ const CanteenDashboard = () => {
                   <div><label className="text-[10px] font-black uppercase">Category</label><select value={newMenuData.category} onChange={(e) => setNewMenuData({ ...newMenuData, category: e.target.value })} className="w-full p-4 bg-slate-50 border rounded-2xl mt-1 text-sm font-bold"><option value="Breakfast">Breakfast (Max Rs50)</option><option value="Lunch">Lunch (Max Rs100)</option><option value="Beverage">Beverage (Max Rs30)</option><option value="Snacks">Snacks (Max Rs30)</option></select></div>
                   <div><label className="text-[10px] font-black uppercase">Price</label><input type="number" value={newMenuData.price} onChange={(e) => setNewMenuData({ ...newMenuData, price: e.target.value })} className="w-full p-4 bg-slate-50 border rounded-2xl mt-1 text-sm font-black" /></div>
                 </div>
-                <button onClick={handleAddMenuItem} className="mt-6 bg-pict-blue text-white px-10 py-4 rounded-2xl font-black text-xs uppercase shadow-xl">Save Item</button>
+                <button disabled={isAddingMenuItem} onClick={handleAddMenuItem} className="mt-6 bg-pict-blue text-white px-10 py-4 rounded-2xl font-black text-xs uppercase shadow-xl disabled:opacity-60 disabled:cursor-not-allowed">{isAddingMenuItem ? 'Saving...' : 'Save Item'}</button>
               </div>
 
               <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
@@ -727,9 +750,9 @@ const CanteenDashboard = () => {
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</label><select value={reportFilters.examinerType} onChange={(e) => setReportFilters({ ...reportFilters, examinerType: e.target.value })} className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"><option>Both (Internal & External)</option><option>Internal</option><option>External</option></select></div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={handleGenerateReport} className="flex-1 border border-pict-blue text-pict-blue py-5 rounded-2xl font-black text-xs uppercase tracking-widest">Generate Detailed Report</button>
-                  <button onClick={handleDownloadReport} className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl hover:bg-pict-blue transition-all cursor-pointer">
-                    <Download size={18} /> Download PICT Billing Report (PDF)
+                  <button disabled={isGeneratingReport} onClick={handleGenerateReport} className="flex-1 border border-pict-blue text-pict-blue py-5 rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed">{isGeneratingReport ? 'Generating...' : 'Generate Detailed Report'}</button>
+                  <button disabled={isDownloadingReport} onClick={handleDownloadReport} className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl hover:bg-pict-blue transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                    <Download size={18} /> {isDownloadingReport ? 'Downloading...' : 'Download PICT Billing Report (PDF)'}
                   </button>
                 </div>
 
