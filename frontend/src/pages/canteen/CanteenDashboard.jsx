@@ -469,23 +469,23 @@ const CanteenDashboard = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F0F2F5] font-sans">
+    <div className="flex h-screen overflow-hidden bg-[#F0F2F5] font-sans">
       {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={toggleSidebar} />}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-pict-blue text-white flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static shadow-2xl`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 h-screen bg-pict-blue text-white flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 shadow-2xl overflow-hidden`}>
         <div className="p-8 border-b border-white/10 text-left">
           <div className="bg-white p-3 rounded-xl shadow-lg inline-block mb-4"><img src={LogoImg} className="h-8 w-auto" alt="PICT" /></div>
           <h2 className="text-sm font-black text-blue-100 uppercase">Canteen Portal</h2>
         </div>
-        <nav className="flex-1 p-6 space-y-3 text-left">
+        <nav className="flex-1 p-6 space-y-3 text-left overflow-y-auto">
           <button onClick={() => { setActiveTab('orders'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl text-xs font-bold transition-all ${activeTab === 'orders' ? 'bg-white/10 border-l-4 border-emerald-400 text-white' : 'text-white/60 hover:text-white'}`}><Receipt size={18} /> Daily Orders</button>
           <button onClick={() => { setActiveTab('menu'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl text-xs font-bold transition-all ${activeTab === 'menu' ? 'bg-white/10 border-l-4 border-blue-400 text-white' : 'text-white/60 hover:text-white'}`}><Coffee size={18} /> Menu Setup</button>
           <button onClick={() => { setActiveTab('reports'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl text-xs font-bold transition-all ${activeTab === 'reports' ? 'bg-white/10 border-l-4 border-purple-400 text-white' : 'text-white/60 hover:text-white'}`}><FileBarChart size={18} /> View Reports</button>
         </nav>
-        <div className="p-6 border-t border-white/10"><button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-4 bg-red-500/10 text-red-400 rounded-xl text-xs font-black"><LogOut size={18} /> Sign Out</button></div>
+        <div className="mt-auto p-6 border-t border-white/10"><button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-4 bg-red-500/10 text-red-400 rounded-xl text-xs font-black"><LogOut size={18} /> Sign Out</button></div>
       </aside>
 
-      <main className="flex-1 w-full lg:max-w-[calc(100%-18rem)] overflow-y-auto">
+      <main className="flex-1 w-full lg:ml-72 h-screen overflow-y-auto">
         <div className="lg:hidden flex items-center justify-between bg-white px-6 py-4 border-b sticky top-0 z-30 shadow-sm"><img src={LogoImg} className="h-8 w-auto" alt="PICT" /><button onClick={toggleSidebar} className="p-2 bg-pict-blue text-white rounded-lg"><Menu size={24} /></button></div>
 
         <div className="p-4 sm:p-6 md:p-10 lg:p-14 text-left">
