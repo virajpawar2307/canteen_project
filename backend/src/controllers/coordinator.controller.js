@@ -25,6 +25,8 @@ const parseDateBounds = (startDate, endDate) => {
 
 const normalizeSubjectName = (subjectName = '') => String(subjectName || '').trim();
 
+const normalizeCategoryName = (category = '') => String(category || '').trim();
+
 const getSubjectFromVoucherRecord = (voucher) => {
   const direct = normalizeSubjectName(voucher?.subjectName);
   if (direct) return direct;
@@ -38,7 +40,7 @@ const buildOrderLookups = async (orders) => {
   const voucherCodes = [...new Set(orders.map((order) => order.voucherCode).filter(Boolean))];
 
   const [vouchers, guestPasses] = await Promise.all([
-    Voucher.find({ code: { $in: voucherCodes } }).select('code dept subjectName items').lean(),
+    Voucher.find({ code: { $in: voucherCodes } }).select('code dept subjectName items category').lean(),
     GuestPass.find({ code: { $in: voucherCodes } }).select('code dept subjectName createdByVoucherCode').lean(),
   ]);
 
@@ -52,12 +54,24 @@ const buildOrderLookups = async (orders) => {
   let creatorVoucherByCode = new Map();
   if (creatorVoucherCodes.length > 0) {
     const creatorVouchers = await Voucher.find({ code: { $in: creatorVoucherCodes } })
-      .select('code subjectName items')
+      .select('code subjectName items category')
       .lean();
     creatorVoucherByCode = new Map(creatorVouchers.map((voucher) => [voucher.code, voucher]));
   }
 
   return { voucherByCode, guestByCode, creatorVoucherByCode };
+};
+
+const resolveOrderCategory = (order, lookups) => {
+  const { voucherByCode, guestByCode, creatorVoucherByCode } = lookups;
+
+  if (order.voucherType === 'Internal') {
+    return normalizeCategoryName(voucherByCode.get(order.voucherCode)?.category) || 'Uncategorized';
+  }
+
+  const guestPass = guestByCode.get(order.voucherCode);
+  const creatorVoucher = voucherByCode.get(guestPass?.createdByVoucherCode) || creatorVoucherByCode.get(guestPass?.createdByVoucherCode);
+  return normalizeCategoryName(creatorVoucher?.category) || 'Uncategorized';
 };
 
 const resolveOrderSubjectName = (order, lookups) => {
@@ -88,6 +102,7 @@ const mapOrderForReport = (order) => ({
   id: order.orderId,
   name: order.examinerName,
   type: order.voucherType,
+  category: order.category || 'Uncategorized',
   items: order.items.map((i) => `${i.qty}x ${i.name}`).join(', '),
   itemsCount: order.items.reduce((sum, item) => sum + item.qty, 0),
   amount: order.amount,
@@ -390,7 +405,7 @@ const clearCoordinatorExternalVouchers = async (req, res) => {
 
 const getCoordinatorReportData = async (req, res) => {
   const deptCode = getDepartmentCode(req);
-  const { startDate, endDate, examinerType } = req.query;
+  const { startDate, endDate, examinerType, category } = req.query;
 
   if (!startDate || !endDate) {
     return res.status(400).json({ message: 'startDate and endDate are required' });
@@ -409,6 +424,7 @@ const getCoordinatorReportData = async (req, res) => {
     ...order,
     dept: resolveOrderDept(order, lookups),
     subjectName: resolveOrderSubjectName(order, lookups),
+    category: resolveOrderCategory(order, lookups),
   }));
 
   const deptOrders = normalizedOrders.filter((order) => (order.dept || '').toLowerCase() === deptCode);
@@ -418,7 +434,12 @@ const getCoordinatorReportData = async (req, res) => {
       ? deptOrders
       : deptOrders.filter((order) => order.voucherType === examinerType);
 
-  const mapped = filteredOrders.map(mapOrderForReport);
+  const filteredByCategory =
+    !category || category === 'All Categories'
+      ? filteredOrders
+      : filteredOrders.filter((order) => normalizeCategoryName(order.category) === normalizeCategoryName(category));
+
+  const mapped = filteredByCategory.map(mapOrderForReport);
   const internal = mapped.filter((o) => o.type === 'Internal');
   const external = mapped.filter((o) => o.type === 'External');
   const internalTotal = internal.reduce((sum, o) => sum + o.amount, 0);
@@ -433,6 +454,7 @@ const getCoordinatorReportData = async (req, res) => {
     internalTotal,
     externalTotal,
     grandTotal: internalTotal + externalTotal,
+    category: category || 'All Categories',
   });
 };
 

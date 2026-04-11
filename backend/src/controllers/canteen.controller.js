@@ -32,6 +32,8 @@ const parseDateBounds = (startDate, endDate) => {
 
 const normalizeSubjectName = (subjectName = '') => String(subjectName || '').trim();
 
+const normalizeCategoryName = (category = '') => String(category || '').trim();
+
 const getSubjectFromVoucherRecord = (voucher) => {
   const direct = normalizeSubjectName(voucher?.subjectName);
   if (direct) return direct;
@@ -45,7 +47,7 @@ const buildOrderLookups = async (orders) => {
   const voucherCodes = [...new Set(orders.map((order) => order.voucherCode).filter(Boolean))];
 
   const [vouchers, guestPasses] = await Promise.all([
-    Voucher.find({ code: { $in: voucherCodes } }).select('code dept subjectName items').lean(),
+    Voucher.find({ code: { $in: voucherCodes } }).select('code dept subjectName items category').lean(),
     GuestPass.find({ code: { $in: voucherCodes } }).select('code dept subjectName createdByVoucherCode').lean(),
   ]);
 
@@ -59,12 +61,24 @@ const buildOrderLookups = async (orders) => {
   let creatorVoucherByCode = new Map();
   if (creatorVoucherCodes.length > 0) {
     const creatorVouchers = await Voucher.find({ code: { $in: creatorVoucherCodes } })
-      .select('code subjectName items')
+      .select('code subjectName items category')
       .lean();
     creatorVoucherByCode = new Map(creatorVouchers.map((voucher) => [voucher.code, voucher]));
   }
 
   return { voucherByCode, guestByCode, creatorVoucherByCode };
+};
+
+const resolveOrderCategory = (order, lookups) => {
+  const { voucherByCode, guestByCode, creatorVoucherByCode } = lookups;
+
+  if (order.voucherType === 'Internal') {
+    return normalizeCategoryName(voucherByCode.get(order.voucherCode)?.category) || 'Uncategorized';
+  }
+
+  const guestPass = guestByCode.get(order.voucherCode);
+  const creatorVoucher = voucherByCode.get(guestPass?.createdByVoucherCode) || creatorVoucherByCode.get(guestPass?.createdByVoucherCode);
+  return normalizeCategoryName(creatorVoucher?.category) || 'Uncategorized';
 };
 
 const resolveOrderSubjectName = (order, lookups) => {
@@ -95,6 +109,7 @@ const mapOrder = (order) => ({
   id: order.orderId,
   name: order.examinerName,
   type: order.voucherType,
+  category: order.category || 'Uncategorized',
   items: order.items.map((i) => `${i.qty}x ${i.name}`).join(', '),
   itemsCount: order.items.reduce((sum, item) => sum + item.qty, 0),
   amount: order.amount,
@@ -135,10 +150,13 @@ const getMenuAndSettings = async (_req, res) => {
     MenuItem.find({ isActive: true }).sort({ category: 1, name: 1 }).lean(),
   ]);
 
+  const voucherCategories = await Voucher.distinct('category');
+
   return res.status(200).json({
     categorySettings: settings?.categorySettings || {},
     menuItems,
     priceLimits: PRICE_LIMITS,
+    voucherCategories: voucherCategories.map((category) => normalizeCategoryName(category)).filter(Boolean),
   });
 };
 
@@ -216,7 +234,7 @@ const deleteMenuItem = async (req, res) => {
 };
 
 const getReportData = async (req, res) => {
-  const { startDate, endDate, department, examinerType } = req.query;
+  const { startDate, endDate, department, examinerType, category } = req.query;
   if (!startDate || !endDate) {
     return res.status(400).json({ message: 'startDate and endDate are required' });
   }
@@ -231,13 +249,15 @@ const getReportData = async (req, res) => {
     ...order,
     dept: resolveOrderDept(order, lookups),
     subjectName: resolveOrderSubjectName(order, lookups),
+    category: resolveOrderCategory(order, lookups),
   }));
 
   const filtered = enrichedOrders.filter((order) => {
     const deptLabel = DEPT_LABELS[order.dept] || order.dept || 'N/A';
     const deptOk = !department || department === 'All Departments' || deptLabel === department;
     const typeOk = !examinerType || examinerType === 'Both (Internal & External)' || order.voucherType === examinerType;
-    return deptOk && typeOk;
+    const categoryOk = !category || category === 'All Categories' || normalizeCategoryName(order.category) === normalizeCategoryName(category);
+    return deptOk && typeOk && categoryOk;
   });
 
   const mapped = filtered.map(mapOrder);
@@ -254,6 +274,7 @@ const getReportData = async (req, res) => {
     internalTotal,
     externalTotal,
     grandTotal: internalTotal + externalTotal,
+    category: category || 'All Categories',
   });
 };
 

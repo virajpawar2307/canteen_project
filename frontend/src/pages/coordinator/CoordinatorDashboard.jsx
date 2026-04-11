@@ -95,6 +95,7 @@ const CoordinatorDashboard = () => {
     startDate: getTodayLocalDate(),
     endDate: getTodayLocalDate(),
     department: 'CE',
+    category: 'All Categories',
     examinerType: 'Both (Internal & External)',
   });
   const [reportData, setReportData] = useState({
@@ -395,6 +396,7 @@ const CoordinatorDashboard = () => {
   const baseCategoryOptions = EXAM_CATEGORY_OPTIONS.filter((option) => option !== OTHER_CATEGORY_VALUE);
   const dynamicCustomCategories = discoveredVoucherCategories.filter((category) => !baseCategoryOptions.includes(category));
   const uploadCategoryOptions = [...baseCategoryOptions, ...dynamicCustomCategories, OTHER_CATEGORY_VALUE];
+  const reportCategoryOptions = ['All Categories', ...new Set([...baseCategoryOptions, ...dynamicCustomCategories])];
 
   const vouchersInSelectedCategory = selectedVoucherCategory
     ? examiners.filter((exam) => normalizeCategoryLabel(exam.category) === selectedVoucherCategory)
@@ -435,6 +437,7 @@ const CoordinatorDashboard = () => {
       const data = await getCoordinatorReportData({
         startDate: reportFilters.startDate,
         endDate: reportFilters.endDate,
+        category: reportFilters.category,
         examinerType: reportFilters.examinerType,
       });
       setReportData({
@@ -463,6 +466,7 @@ const CoordinatorDashboard = () => {
       const data = await getCoordinatorReportData({
         startDate: reportFilters.startDate,
         endDate: reportFilters.endDate,
+        category: reportFilters.category,
         examinerType: reportFilters.examinerType,
       });
       latest = {
@@ -480,6 +484,14 @@ const CoordinatorDashboard = () => {
     }
 
     const { internal, external, internalTotal, externalTotal, grandTotal } = latest;
+    const generatedAt = new Date().toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
 
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -487,61 +499,117 @@ const CoordinatorDashboard = () => {
         <head>
           <title>Coordinator_Billing_Report</title>
           <style>
-            @page { size: A4; margin: 15mm; }
-            body { font-family: Arial, sans-serif; font-size: 11pt; color: #000; line-height: 1.4; margin: 0; padding: 10px; }
-            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
-            .header h1 { font-size: 16pt; margin: 0; font-weight: bold; text-transform: uppercase; }
-            .header h2 { font-size: 12pt; margin: 5px 0; }
-            .report-title { text-align: center; font-weight: bold; text-decoration: underline; margin: 15px 0; font-size: 13pt; }
-            .meta-section { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11pt; }
-            .section-header { font-weight: bold; margin: 20px 0 10px 0; font-size: 11pt; text-transform: uppercase; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
-            th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 10pt; }
-            th { background: #eee; font-weight: bold; }
-            .subject-cell { min-width: 180px; max-width: 260px; white-space: normal; word-break: break-word; }
-            .subtotal { text-align: right; font-weight: bold; padding: 10px; border: 1px solid #000; border-top: none; }
-            .grand-total { margin-top: 25px; font-weight: bold; font-size: 13pt; display: flex; justify-content: space-between; padding: 10px; border: 2px solid #000; }
+            @page { size: A4; margin: 12mm; }
+            body { font-family: Arial, sans-serif; font-size: 10px; color: #111; line-height: 1.25; margin: 0; }
+            .sheet { position: relative; border: 1px solid #2f2f2f; padding: 12px; min-height: calc(297mm - 24mm); box-sizing: border-box; overflow: hidden; }
+            .watermark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+            .watermark img { width: 380px; opacity: 0.08; }
+            .content { position: relative; z-index: 2; }
+            .header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+            .logo { width: 48px; height: 48px; object-fit: contain; }
+            .inst h1 { font-size: 18px; margin: 0; font-weight: 800; }
+            .inst p { font-size: 11px; margin: 2px 0 0; font-weight: 600; }
+            .title { border: 2px solid #1f1f1f; text-align: center; font-size: 12px; font-weight: 800; padding: 4px 6px; margin: 8px auto 10px; width: 56%; }
+            .meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 700; }
+            .dept-line { margin: 0 0 8px; font-weight: 700; }
+            .section { margin-top: 8px; }
+            .section-head { background: #2a2a2a; color: #fff; font-weight: 800; padding: 4px 6px; font-size: 10px; text-transform: uppercase; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #565656; padding: 4px 5px; vertical-align: top; }
+            th { background: #3c3c3c; color: #fff; font-size: 9px; font-weight: 800; }
+            td { font-size: 9px; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .subtotal { text-align: right; font-size: 13px; font-weight: 800; margin: 4px 0 10px; }
+            .grand-wrap { display: flex; justify-content: flex-end; margin: 4px 0 14px; }
+            .grand-box { border: 2px solid #222; min-width: 170px; display: flex; justify-content: space-between; padding: 4px 8px; font-weight: 800; font-size: 14px; }
+            .sign-grid-3 { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .sign-grid-2 { margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; max-width: 70%; margin-left: auto; margin-right: auto; }
+            .sign { text-align: center; }
+            .sign-line { border-top: 2px solid #4a4a4a; margin-bottom: 4px; }
+            .sign label { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+            .footer { margin-top: 18px; padding-top: 6px; border-top: 1px solid #8a8a8a; text-align: center; font-size: 8px; font-weight: 700; text-transform: uppercase; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>SCTR'S PUNE INSTITUTE OF COMPUTER TECHNOLOGY</h1>
-            <h2>Office of the Mess & Canteen Section</h2>
-          </div>
+          <div class="sheet">
+            <div class="watermark"><img src="${LogoImg}" alt="PICT Watermark" /></div>
+            <div class="content">
+              <div class="header">
+                <img class="logo" src="${LogoImg}" alt="PICT Logo" />
+                <div class="inst">
+                  <h1>SCTR'S PUNE INSTITUTE OF COMPUTER TECHNOLOGY</h1>
+                  <p>Office of the Mess & Canteen Section</p>
+                </div>
+              </div>
 
-          <div class="report-title">DEPARTMENT-WISE BILLING REPORT</div>
+              <div class="title">DEPARTMENT-WISE BILLING REPORT</div>
 
-          <div class="meta-section">
-            <div>
-              Ref No: PICT/CNTN/2026/042<br/>
-              Department: ${deptCode}
+              <div class="meta">
+                <div>Ref No: PICT/CNTN/2026/042/01/ALL-01</div>
+                <div>Date: ${formatDateForDisplay(reportFilters.startDate)} to ${formatDateForDisplay(reportFilters.endDate)}</div>
+              </div>
+              <p class="dept-line">Category: ${reportFilters.category || 'All Categories'} | Department: ${deptCode}</p>
+
+              <div class="section">
+                <div class="section-head">SECTION A: FACULTY CONSUMPTION</div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th class="text-center">Sr</th>
+                      <th>Date</th>
+                      <th>Faculty Name</th>
+                      <th>Year &amp; Specific Subject</th>
+                      <th>Items Consumed</th>
+                      <th class="text-right">Total (Rs)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${internal.length > 0 ? internal.map((o, i) => `<tr><td class="text-center">${i + 1}</td><td>${formatDateForDisplay(o.date)}<br/>${o.time || ''}</td><td>${o.name}<br/><small>ID: ${o.id}</small></td><td>${o.subjectName || 'N/A'}</td><td>${o.items}</td><td class="text-right">Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="6" class="text-center">No Records</td></tr>'}
+                  </tbody>
+                </table>
+                <div class="subtotal">Sub-Total (Faculty): Rs. ${internalTotal}/-</div>
+              </div>
+
+              <div class="section">
+                <div class="section-head">SECTION B: GUEST/EXTERNAL CONSUMPTION</div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th class="text-center">Sr</th>
+                      <th>Date</th>
+                      <th>Guest Name</th>
+                      <th>Year &amp; Specific Subject</th>
+                      <th>Items Consumed</th>
+                      <th class="text-right">Total (Rs)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${external.length > 0 ? external.map((o, i) => `<tr><td class="text-center">${i + 1}</td><td>${formatDateForDisplay(o.date)}<br/>${o.time || ''}</td><td>${o.name}<br/><small>ID: ${o.id}</small></td><td>${o.subjectName || 'N/A'}</td><td>${o.items}</td><td class="text-right">Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="6" class="text-center">No Records</td></tr>'}
+                  </tbody>
+                </table>
+                <div class="subtotal">Sub-Total (Guest): Rs. ${externalTotal}/-</div>
+              </div>
+
+              <div class="grand-wrap">
+                <div class="grand-box">
+                  <span>GRAND TOTAL</span>
+                  <span>Rs. ${grandTotal}</span>
+                </div>
+              </div>
+
+              <div class="sign-grid-3">
+                <div class="sign"><div class="sign-line"></div><label>Mess Manager</label></div>
+                <div class="sign"><div class="sign-line"></div><label>Practical Coordinator</label></div>
+                <div class="sign"><div class="sign-line"></div><label>Head of Department</label></div>
+              </div>
+              <div class="sign-grid-2">
+                <div class="sign"><div class="sign-line"></div><label>CEO</label></div>
+                <div class="sign"><div class="sign-line"></div><label>Principal</label></div>
+              </div>
+
+              <div class="footer">System Generated Report | PICT Canteen & Mess Section | Downloaded: ${generatedAt}</div>
             </div>
-            <div style="text-align: right;">
-              Period: ${formatDateForDisplay(reportFilters.startDate)} to ${formatDateForDisplay(reportFilters.endDate)}
-            </div>
-          </div>
-
-          <div class="section-header">SECTION A: FACULTY CONSUMPTION</div>
-          <table>
-            <thead><tr><th>Sr</th><th>Order ID</th><th>Faculty Name</th><th>Subject Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Total (Rs)</th></tr></thead>
-            <tbody>
-              ${internal.length > 0 ? internal.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td class="subject-cell">${o.subjectName || 'N/A'}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time || ''}</td><td>${o.items}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="8" style="text-align:center">No Records</td></tr>'}
-            </tbody>
-          </table>
-          <div class="subtotal">Sub-Total (Faculty): Rs. ${internalTotal}/-</div>
-
-          <div class="section-header">SECTION B: GUEST/EXTERNAL CONSUMPTION</div>
-          <table>
-            <thead><tr><th>Sr</th><th>Order ID</th><th>Guest Name</th><th>Subject Name</th><th>Date</th><th>Time</th><th>Items Consumed</th><th>Total (Rs)</th></tr></thead>
-            <tbody>
-              ${external.length > 0 ? external.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.name}</td><td class="subject-cell">${o.subjectName || 'N/A'}</td><td>${formatDateForDisplay(o.date)}</td><td>${o.time || ''}</td><td>${o.items}</td><td>Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="8" style="text-align:center">No Records</td></tr>'}
-            </tbody>
-          </table>
-          <div class="subtotal">Sub-Total (Guest): Rs. ${externalTotal}/-</div>
-
-          <div class="grand-total">
-            <span>GRAND TOTAL</span>
-            <span>Rs. ${grandTotal}</span>
           </div>
         </body>
       </html>
@@ -778,9 +846,10 @@ const CoordinatorDashboard = () => {
               </div>
 
               <div className="rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] p-4 sm:p-6 lg:p-8 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6 text-left">
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Start Date</label><input type="date" value={reportFilters.startDate} onChange={(e) => setReportFilters({...reportFilters, startDate: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">End Date</label><input type="date" value={reportFilters.endDate} onChange={(e) => setReportFilters({...reportFilters, endDate: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Category</label><select value={reportFilters.category} onChange={(e) => setReportFilters({...reportFilters, category: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue">{reportCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></div>
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Department</label><div className="w-full p-4 bg-pict-light-blue border border-slate-200 rounded-2xl text-sm font-black text-pict-blue">{deptCode}</div></div>
                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Type</label><select value={reportFilters.examinerType} onChange={(e) => setReportFilters({...reportFilters, examinerType: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue"><option>Both (Internal & External)</option><option>Internal</option><option>External</option></select></div>
                 </div>
@@ -793,7 +862,7 @@ const CoordinatorDashboard = () => {
                 </div>
                 <h3 className="text-center font-black underline mb-6">DEPARTMENT-WISE BILLING REPORT</h3>
                 <div className="flex justify-between text-sm font-bold mb-8">
-                  <div className="text-left space-y-1"><p>Ref No: PICT/CNTN/2026/042</p><p>Department: {deptCode}</p></div>
+                  <div className="text-left space-y-1"><p>Ref No: PICT/CNTN/2026/042</p><p>Category: {reportFilters.category || 'All Categories'}</p><p>Department: {deptCode}</p></div>
                   <div className="text-right"><p>Period: {formatDateForDisplay(reportFilters.startDate)} to {formatDateForDisplay(reportFilters.endDate)}</p></div>
                 </div>
                 <div className="bg-slate-100 p-2 font-black text-sm border border-slate-900 mb-2 text-left uppercase tracking-wide">SECTION A: FACULTY CONSUMPTION</div>
