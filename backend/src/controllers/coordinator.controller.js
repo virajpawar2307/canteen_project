@@ -104,6 +104,8 @@ const normalizePhone = (phone = '') => {
   return digits || String(phone || '').trim();
 };
 
+const buildPhoneRangeKey = (phone, fromDate, toDate) => `${normalizePhone(phone)}|${String(fromDate || '').trim()}|${String(toDate || '').trim()}`;
+
 const generateUniqueInternalVoucherCode = async (deptCode, reservedCodes = new Set()) => {
   const normalizedDept = String(deptCode || '').toUpperCase();
 
@@ -119,18 +121,6 @@ const generateUniqueInternalVoucherCode = async (deptCode, reservedCodes = new S
   }
 
   throw new Error(`Could not generate unique voucher code for ${normalizedDept}`);
-};
-
-const loadInternalVoucherMapByPhone = async (deptCode) => {
-  const vouchers = await Voucher.find({ dept: deptCode, type: 'Internal' }).lean();
-  const map = new Map();
-  for (const voucher of vouchers) {
-    const phoneKey = normalizePhone(voucher.phone);
-    if (phoneKey) {
-      map.set(phoneKey, voucher.code);
-    }
-  }
-  return map;
 };
 
 const getCoordinatorVouchers = async (req, res) => {
@@ -151,14 +141,59 @@ const createManualVoucher = async (req, res) => {
   }
 
   const deptCode = getDepartmentCode(req);
-  const { name, email, phone, fromDate, toDate, subjectName } = req.body;
+  const { name, email, phone, fromDate, toDate, subjectName, category } = req.body;
+  const normalizedCategory = normalizeSubjectName(category) || 'Manual Entry';
 
+  const existingVouchers = await Voucher.find({ dept: deptCode, type: 'Internal' }).lean();
   const phoneKey = normalizePhone(phone);
-  const existingCodeByPhone = await loadInternalVoucherMapByPhone(deptCode);
-  const reservedCodes = new Set(
-    (await Voucher.find({ dept: deptCode, type: 'Internal' }).select('code').lean()).map((voucher) => voucher.code)
-  );
+
+  const existingCodeByPhone = new Map();
+  const reservedCodes = new Set();
+  const voucherByPhoneRange = new Map();
+
+  for (const voucher of existingVouchers) {
+    reservedCodes.add(voucher.code);
+
+    const existingPhoneKey = normalizePhone(voucher.phone);
+    if (existingPhoneKey && !existingCodeByPhone.has(existingPhoneKey)) {
+      existingCodeByPhone.set(existingPhoneKey, voucher.code);
+    }
+
+    const rangeKey = buildPhoneRangeKey(voucher.phone, voucher.fromDate, voucher.toDate);
+    if (!voucherByPhoneRange.has(rangeKey)) {
+      voucherByPhoneRange.set(rangeKey, voucher);
+    }
+  }
+
   const code = existingCodeByPhone.get(phoneKey) || (await generateUniqueInternalVoucherCode(deptCode, reservedCodes));
+
+  const rangeKey = buildPhoneRangeKey(phone, fromDate, toDate);
+  const existingForRange = voucherByPhoneRange.get(rangeKey);
+
+  if (existingForRange) {
+    const updated = await Voucher.findOneAndUpdate(
+      { _id: existingForRange._id },
+      {
+        name,
+        email: email || 'N/A',
+        phone,
+        code,
+        fromDate,
+        toDate,
+        subjectName: normalizeSubjectName(subjectName) || 'N/A',
+        category: normalizedCategory,
+        type: 'Internal',
+        items: 'Pending',
+        amount: 0,
+        date: fromDate,
+        dept: deptCode,
+        createdBy: req.user.sub,
+      },
+      { new: true, runValidators: true }
+    ).lean();
+
+    return res.status(200).json(updated);
+  }
 
   const voucher = await Voucher.create({
     name,
@@ -168,6 +203,7 @@ const createManualVoucher = async (req, res) => {
     fromDate,
     toDate,
     subjectName: normalizeSubjectName(subjectName) || 'N/A',
+    category: normalizedCategory,
     type: 'Internal',
     items: 'Pending',
     amount: 0,
@@ -189,15 +225,73 @@ const bulkCreateVouchers = async (req, res) => {
     (entry) => entry && entry.name && entry.phone && entry.fromDate && entry.toDate
   );
 
-  const existingCodeByPhone = await loadInternalVoucherMapByPhone(deptCode);
-  const reservedCodes = new Set(
-    (await Voucher.find({ dept: deptCode, type: 'Internal' }).select('code').lean()).map((voucher) => voucher.code)
-  );
+  const existingVouchers = await Voucher.find({ dept: deptCode, type: 'Internal' }).lean();
+  const existingCodeByPhone = new Map();
+  const reservedCodes = new Set();
+  const existingVoucherByRange = new Map();
+
+  for (const voucher of existingVouchers) {
+    reservedCodes.add(voucher.code);
+
+    const existingPhoneKey = normalizePhone(voucher.phone);
+    if (existingPhoneKey && !existingCodeByPhone.has(existingPhoneKey)) {
+      existingCodeByPhone.set(existingPhoneKey, voucher.code);
+    }
+
+    const rangeKey = buildPhoneRangeKey(voucher.phone, voucher.fromDate, voucher.toDate);
+    if (!existingVoucherByRange.has(rangeKey)) {
+      existingVoucherByRange.set(rangeKey, voucher);
+    }
+  }
+
   const documents = [];
+  const updateOperations = [];
+  const seenBatchRangeKeys = new Set();
+  let skippedCount = 0;
 
   for (const entry of validEntries) {
     const phoneKey = normalizePhone(entry.phone);
+    if (!phoneKey) {
+      skippedCount += 1;
+      continue;
+    }
+
+    const rangeKey = buildPhoneRangeKey(entry.phone, entry.fromDate, entry.toDate);
+    if (seenBatchRangeKeys.has(rangeKey)) {
+      skippedCount += 1;
+      continue;
+    }
+    seenBatchRangeKeys.add(rangeKey);
+
     const code = existingCodeByPhone.get(phoneKey) || (await generateUniqueInternalVoucherCode(deptCode, reservedCodes));
+
+    const existingForRange = existingVoucherByRange.get(rangeKey);
+    if (existingForRange) {
+      updateOperations.push({
+        updateOne: {
+          filter: { _id: existingForRange._id },
+          update: {
+            $set: {
+              name: entry.name,
+              email: entry.email || 'N/A',
+              phone: entry.phone,
+              code,
+              fromDate: entry.fromDate,
+              toDate: entry.toDate,
+              subjectName: normalizeSubjectName(entry.subjectName) || normalizeSubjectName(entry.items) || 'N/A',
+              category: normalizeSubjectName(entry.category) || 'Uncategorized',
+              type: 'Internal',
+              items: entry.items || 'Pending',
+              amount: Number.isFinite(entry.amount) ? entry.amount : 0,
+              date: entry.date || entry.fromDate,
+              dept: deptCode,
+              createdBy: req.user.sub,
+            },
+          },
+        },
+      });
+      continue;
+    }
 
     const createdDoc = {
       name: entry.name,
@@ -207,6 +301,7 @@ const bulkCreateVouchers = async (req, res) => {
       fromDate: entry.fromDate,
       toDate: entry.toDate,
       subjectName: normalizeSubjectName(entry.subjectName) || normalizeSubjectName(entry.items) || 'N/A',
+      category: normalizeSubjectName(entry.category) || 'Uncategorized',
       type: 'Internal',
       items: entry.items || 'Pending',
       amount: Number.isFinite(entry.amount) ? entry.amount : 0,
@@ -219,16 +314,23 @@ const bulkCreateVouchers = async (req, res) => {
   }
 
   if (documents.length === 0) {
-    return res.status(400).json({ message: 'No valid entries found in payload' });
+    if (updateOperations.length === 0) {
+      return res.status(400).json({ message: 'No valid entries found in payload' });
+    }
+  }
+
+  if (updateOperations.length > 0) {
+    await Voucher.bulkWrite(updateOperations, { ordered: false });
   }
 
   const created = documents.length > 0 ? await Voucher.insertMany(documents, { ordered: false }) : [];
   const vouchers = await Voucher.find({ dept: deptCode }).sort({ createdAt: -1 }).lean();
 
   return res.status(201).json({
-    count: created.length,
+    count: created.length + updateOperations.length,
     createdCount: created.length,
-    updatedCount: 0,
+    updatedCount: updateOperations.length,
+    skippedCount,
     vouchers,
   });
 };

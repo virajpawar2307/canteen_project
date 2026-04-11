@@ -74,6 +74,7 @@ const CoordinatorDashboard = () => {
   const [externalVouchers, setExternalVouchers] = useState([]);
   const [voucherSearch, setVoucherSearch] = useState('');
   const [externalVoucherSearch, setExternalVoucherSearch] = useState('');
+  const [selectedVoucherCategory, setSelectedVoucherCategory] = useState('');
   const [isGeneratingVouchers, setIsGeneratingVouchers] = useState(false);
   const [isAddingEntry, setIsAddingEntry] = useState(false);
   const [isClearingVouchers, setIsClearingVouchers] = useState(false);
@@ -320,8 +321,15 @@ const CoordinatorDashboard = () => {
       try {
         const response = await bulkCreateCoordinatorVouchers(newEntries);
         setExaminers(response.vouchers || []);
+        setSelectedVoucherCategory(selectedCategory);
         setExcelFile(null);
-        alert(`${response.count || newEntries.length} vouchers generated successfully.`);
+        const createdCount = Number(response?.createdCount || 0);
+        const updatedCount = Number(response?.updatedCount || 0);
+        const skippedCount = Number(response?.skippedCount || 0);
+
+        alert(
+          `Voucher sync completed. Created: ${createdCount}, Updated: ${updatedCount}, Skipped: ${skippedCount}.`
+        );
       } catch (error) {
         const message = error?.response?.data?.message || 'Bulk upload failed. Please verify sheet format.';
         alert(message);
@@ -382,11 +390,21 @@ const CoordinatorDashboard = () => {
     { label: 'Report rows', value: reportData.internal.length + reportData.external.length, tone: 'from-amber-500 to-orange-500' },
   ];
 
+  const normalizeCategoryLabel = (categoryText) => String(categoryText || '').trim();
+  const discoveredVoucherCategories = [...new Set(examiners.map((exam) => normalizeCategoryLabel(exam.category)).filter(Boolean))];
+  const baseCategoryOptions = EXAM_CATEGORY_OPTIONS.filter((option) => option !== OTHER_CATEGORY_VALUE);
+  const dynamicCustomCategories = discoveredVoucherCategories.filter((category) => !baseCategoryOptions.includes(category));
+  const uploadCategoryOptions = [...baseCategoryOptions, ...dynamicCustomCategories, OTHER_CATEGORY_VALUE];
+
+  const vouchersInSelectedCategory = selectedVoucherCategory
+    ? examiners.filter((exam) => normalizeCategoryLabel(exam.category) === selectedVoucherCategory)
+    : [];
+
   const normalizedVoucherSearch = voucherSearch.trim().toLowerCase();
-  const filteredExaminers = examiners.filter((exam) => {
+  const filteredExaminers = vouchersInSelectedCategory.filter((exam) => {
     if (!normalizedVoucherSearch) return true;
 
-    return [exam.name, exam.code, exam.phone, exam.fromDate, exam.toDate]
+    return [exam.name, exam.code, exam.phone, exam.fromDate, exam.toDate, exam.category]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedVoucherSearch));
   });
@@ -399,6 +417,12 @@ const CoordinatorDashboard = () => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedExternalVoucherSearch));
   });
+
+  useEffect(() => {
+    if (selectedVoucherCategory && !discoveredVoucherCategories.includes(selectedVoucherCategory)) {
+      setSelectedVoucherCategory('');
+    }
+  }, [discoveredVoucherCategories, selectedVoucherCategory]);
 
   const handleGenerateReport = async () => {
     if (!reportFilters.startDate || !reportFilters.endDate) {
@@ -625,7 +649,7 @@ const CoordinatorDashboard = () => {
                         className="w-full p-4 bg-slate-50 border border-slate-200 rounded-3xl text-sm font-bold shadow-sm outline-none focus:border-pict-blue focus:bg-white"
                       >
                         <option value="">Select Category...</option>
-                        {EXAM_CATEGORY_OPTIONS.map((option) => (
+                        {uploadCategoryOptions.map((option) => (
                           <option key={option} value={option}>{option}</option>
                         ))}
                       </select>
@@ -667,15 +691,30 @@ const CoordinatorDashboard = () => {
                     <button disabled={isClearingVouchers} onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-2xl text-[10px] font-black uppercase shadow-sm transition-all hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"><Eraser size={14} /> {isClearingVouchers ? 'Clearing...' : 'Clear Vouchers'}</button>
                   </div>
                 </div>
-                <div className="px-8 py-5 border-b border-slate-100 bg-white/80">
-                  <div className="relative max-w-md">
+                <div className="px-8 py-5 border-b border-slate-100 bg-white/80 flex flex-col md:flex-row gap-4 md:items-end md:justify-between">
+                  <div className="w-full md:max-w-sm">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                    <select
+                      value={selectedVoucherCategory}
+                      onChange={(e) => setSelectedVoucherCategory(e.target.value)}
+                      className="mt-1.5 w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue shadow-sm"
+                    >
+                      <option value="">Select category to view vouchers</option>
+                      {discoveredVoucherCategories.map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="relative w-full md:max-w-md">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
                       value={voucherSearch}
                       onChange={(e) => setVoucherSearch(e.target.value)}
                       placeholder="Search by name, code, phone..."
-                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue shadow-sm"
+                      disabled={!selectedVoucherCategory}
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -688,6 +727,7 @@ const CoordinatorDashboard = () => {
                         <th className="px-6">Phone</th>
                         <th className="px-6 text-center">Valid From</th>
                         <th className="px-6 text-center">Valid To</th>
+                        <th className="px-6">Category</th>
                         <th className="px-6 text-center">Status</th>
                         <th className="px-6 text-center">Actions</th>
                       </tr>
@@ -700,6 +740,7 @@ const CoordinatorDashboard = () => {
                           <td className="px-6 text-xs font-bold text-slate-600">{ex.phone || 'N/A'}</td>
                           <td className="px-6 text-center text-xs font-bold text-slate-600">{ex.fromDate}</td>
                           <td className="px-6 text-center text-xs font-bold text-slate-600">{ex.toDate}</td>
+                          <td className="px-6 text-xs font-bold text-slate-600">{normalizeCategoryLabel(ex.category) || 'Uncategorized'}</td>
                           <td className="px-6 text-center"><span className={`text-[9px] font-black px-2 py-1 rounded-full uppercase ${getVoucherStatus(ex.fromDate, ex.toDate) === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>{getVoucherStatus(ex.fromDate, ex.toDate)}</span></td>
                           <td className="px-6">
                             <div className="flex justify-center gap-2">
@@ -712,8 +753,10 @@ const CoordinatorDashboard = () => {
                       ))}
                       {filteredExaminers.length === 0 && (
                         <tr>
-                          <td colSpan="7" className="px-6 py-8 text-center text-xs font-bold text-slate-500">
-                            {voucherSearch.trim() ? 'No matching vouchers found.' : 'No vouchers generated yet.'}
+                          <td colSpan="8" className="px-6 py-8 text-center text-xs font-bold text-slate-500">
+                            {!selectedVoucherCategory
+                              ? 'Select a category to view vouchers.'
+                              : (voucherSearch.trim() ? 'No matching vouchers found for selected category.' : 'No vouchers found for selected category.')}
                           </td>
                         </tr>
                       )}
