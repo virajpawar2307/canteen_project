@@ -5,7 +5,7 @@ const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
 const Voucher = require('../models/Voucher');
 const CanteenSetting = require('../models/CanteenSetting');
-const { formatTimeInAppOffset, getCurrentMinutesInAppOffset } = require('../utils/timezone');
+const { formatDateInAppOffset, formatTimeInAppOffset, getCurrentMinutesInAppOffset } = require('../utils/timezone');
 
 const DEFAULT_CATEGORY_SETTINGS = {
   Breakfast: { status: true, fromTime: '08:30', toTime: '10:30' },
@@ -34,6 +34,30 @@ const isTimeWithinSlot = (fromTime, toTime, currentMinutes = getCurrentMinutesIn
 };
 
 const formatSlot = (fromTime, toTime) => `${fromTime} - ${toTime}`;
+
+const parseDateOnlyKey = (dateText) => {
+  const match = String(dateText || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  return year * 10000 + month * 100 + day;
+};
+
+const isDateRangeActive = (fromDate, toDate) => {
+  const start = parseDateOnlyKey(fromDate);
+  const end = parseDateOnlyKey(toDate);
+  if (!start || !end) return false;
+
+  const todayKey = parseDateOnlyKey(formatDateInAppOffset(new Date()));
+  if (!todayKey) return false;
+
+  return todayKey >= start && todayKey <= end;
+};
 
 const randomDigits = (length) => Math.floor(Math.random() * 10 ** length).toString().padStart(length, '0');
 
@@ -125,6 +149,7 @@ const placeExaminerOrder = async (req, res) => {
 
   const { voucherCode, voucherType, voucherName, dept } = req.voucherSession;
   const requestedItems = req.body.items || [];
+  const guestPassId = req.body.guestPassId || null;
   const categorySettings = await getResolvedCategorySettings();
 
   const menuItemIds = requestedItems.map((i) => i.menuItemId);
@@ -161,15 +186,52 @@ const placeExaminerOrder = async (req, res) => {
   const amount = normalizedItems.reduce((sum, item) => sum + item.qty * item.price, 0);
   const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`;
 
+  let orderVoucherCode = voucherCode;
+  let orderVoucherType = voucherType;
+  let orderExaminerName = voucherName;
+  let orderDept = dept || null;
+  let placedForGuest = false;
+  let placedViaGuestPassId = null;
+
+  if (guestPassId) {
+    if (voucherType !== 'Internal') {
+      return res.status(403).json({ message: 'Only internal examiners can place orders for guests' });
+    }
+
+    const guestPass = await GuestPass.findOne({
+      _id: guestPassId,
+      createdByVoucherCode: voucherCode,
+    }).lean();
+
+    if (!guestPass) {
+      return res.status(404).json({ message: 'Guest pass not found' });
+    }
+
+    if (!isDateRangeActive(guestPass.fromDate, guestPass.toDate)) {
+      return res.status(400).json({ message: 'Guest pass is not active for today' });
+    }
+
+    orderVoucherCode = guestPass.code;
+    orderVoucherType = 'External';
+    orderExaminerName = guestPass.name;
+    orderDept = guestPass.dept || dept || null;
+    placedForGuest = true;
+    placedViaGuestPassId = guestPass._id;
+  }
+
   const created = await Order.create({
     orderId,
-    voucherCode,
-    voucherType,
-    examinerName: voucherName,
-    dept: dept || null,
+    voucherCode: orderVoucherCode,
+    voucherType: orderVoucherType,
+    examinerName: orderExaminerName,
+    dept: orderDept,
     items: normalizedItems,
     amount,
     status: 'Pending',
+    placedForGuest,
+    placedByVoucherCode: placedForGuest ? voucherCode : null,
+    placedByName: placedForGuest ? voucherName : null,
+    placedViaGuestPassId,
   });
 
   return res.status(201).json({
@@ -180,6 +242,7 @@ const placeExaminerOrder = async (req, res) => {
       amount: created.amount,
       status: created.status,
     },
+    placedForGuest: created.placedForGuest,
   });
 };
 
@@ -256,6 +319,7 @@ const orderValidators = [
   body('items').isArray({ min: 1 }).withMessage('items is required'),
   body('items.*.menuItemId').isString().notEmpty().withMessage('menuItemId is required'),
   body('items.*.qty').isInt({ min: 1 }).withMessage('qty must be >= 1'),
+  body('guestPassId').optional().isMongoId().withMessage('guestPassId must be a valid id'),
 ];
 
 const guestPassValidators = [

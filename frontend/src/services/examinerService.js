@@ -15,8 +15,13 @@ export const getExaminerOrders = async () => {
   return response.data;
 };
 
-export const placeExaminerOrder = async (items) => {
-  const response = await apiClient.post('/examiner/orders', { items });
+export const placeExaminerOrder = async (items, guestPassId) => {
+  const payload = { items };
+  if (guestPassId) {
+    payload.guestPassId = guestPassId;
+  }
+
+  const response = await apiClient.post('/examiner/orders', payload);
   return response.data;
 };
 

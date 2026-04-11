@@ -26,6 +26,29 @@ import {
   placeExaminerOrder,
 } from '../../services/examinerService';
 
+const parseDateOnlyKey = (dateText) => {
+  const match = String(dateText || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  return year * 10000 + month * 100 + day;
+};
+
+const isPassActiveToday = (guestPass) => {
+  const start = parseDateOnlyKey(guestPass?.fromDate);
+  const end = parseDateOnlyKey(guestPass?.toDate);
+  if (!start || !end) return false;
+
+  const now = new Date();
+  const todayKey = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  return todayKey >= start && todayKey <= end;
+};
+
 const ExaminerDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('menu');
@@ -44,6 +67,7 @@ const ExaminerDashboard = () => {
   const [cart, setCart] = useState({});
   const [myOrders, setMyOrders] = useState([]);
   const [guestVouchers, setGuestVouchers] = useState([]);
+  const [selectedGuestPassForOrder, setSelectedGuestPassForOrder] = useState(null);
 
   const [guestForm, setGuestForm] = useState({
     name: '',
@@ -155,9 +179,15 @@ const ExaminerDashboard = () => {
     const itemsPayload = Object.entries(cart).map(([menuItemId, qty]) => ({ menuItemId, qty }));
 
     try {
-      const response = await placeExaminerOrder(itemsPayload);
+      const response = await placeExaminerOrder(itemsPayload, selectedGuestPassForOrder?.id);
       setMyOrders((prev) => [response.order, ...prev]);
       setCart({});
+
+      if (response?.placedForGuest) {
+        alert(`Order placed for ${selectedGuestPassForOrder?.name || 'guest'} and will appear on the guest dashboard.`);
+        setSelectedGuestPassForOrder(null);
+      }
+
       setActiveTab('orders');
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to place order.');
@@ -187,10 +217,21 @@ const ExaminerDashboard = () => {
       try {
         await deleteGuestPass(idToRemove);
         setGuestVouchers((prev) => prev.filter((v) => v.id !== idToRemove));
+        setSelectedGuestPassForOrder((prev) => (prev?.id === idToRemove ? null : prev));
       } catch (error) {
         alert(error?.response?.data?.message || 'Failed to delete guest pass.');
       }
     }
+  };
+
+  const handleStartOrderForGuest = (guest) => {
+    if (!isPassActiveToday(guest)) {
+      alert('This guest pass is not active for today.');
+      return;
+    }
+
+    setSelectedGuestPassForOrder(guest);
+    setActiveTab('menu');
   };
 
   const handleWhatsApp = (guest) => {
@@ -215,6 +256,19 @@ const ExaminerDashboard = () => {
       <div className="mb-6 md:mb-8">
         <h2 className="text-2xl md:text-3xl font-black text-pict-text uppercase tracking-tight">Canteen Menu</h2>
         <p className="text-slate-500 text-xs md:text-sm font-medium mt-1">Ordering is subject to category timings.</p>
+        {selectedGuestPassForOrder && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
+            <p className="text-[11px] font-black uppercase tracking-widest text-pict-blue">
+              Ordering For Guest: {selectedGuestPassForOrder.name} ({selectedGuestPassForOrder.code})
+            </p>
+            <button
+              onClick={() => setSelectedGuestPassForOrder(null)}
+              className="px-3 py-1.5 rounded-lg bg-white border border-blue-200 text-[10px] font-black uppercase tracking-widest text-pict-blue cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col xl:flex-row gap-8">
@@ -266,6 +320,11 @@ const ExaminerDashboard = () => {
         <div className="hidden xl:block xl:w-96 shrink-0">
           <div className="bg-pict-blue rounded-[2rem] shadow-xl p-8 sticky top-10 text-white">
             <h3 className="text-sm font-black uppercase tracking-widest text-blue-200 mb-6 flex items-center gap-3"><ShoppingBag size={18} /> Order Summary</h3>
+            {selectedGuestPassForOrder && (
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-4">
+                Guest: {selectedGuestPassForOrder.name}
+              </p>
+            )}
             {totalItemsInCart === 0 ? (
               <p className="text-xs font-medium text-white/50 italic text-center py-8">No items selected yet.</p>
             ) : (
@@ -366,7 +425,8 @@ const ExaminerDashboard = () => {
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-5 flex justify-between text-[11px] font-bold text-slate-700"><span>{guest.fromDate}</span><span className="text-slate-300">{'->'}</span><span>{guest.toDate}</span></div>
               <div className="grid grid-cols-2 gap-3 mt-auto">
                 <button onClick={() => handleWhatsApp(guest)} className="flex justify-center items-center gap-2 bg-emerald-50 text-emerald-600 py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer"><MessageCircle size={14} /> Send</button>
-                <button onClick={() => handleDeleteGuest(guest.id)} className="flex justify-center items-center gap-2 bg-red-50 text-red-600 py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer"><Trash2 size={14} /> Revoke</button>
+                <button onClick={() => handleStartOrderForGuest(guest)} className="flex justify-center items-center gap-2 bg-blue-50 text-pict-blue py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer"><ShoppingBag size={14} /> Order</button>
+                <button onClick={() => handleDeleteGuest(guest.id)} className="col-span-2 flex justify-center items-center gap-2 bg-red-50 text-red-600 py-2.5 rounded-xl font-black text-[10px] uppercase cursor-pointer"><Trash2 size={14} /> Revoke</button>
               </div>
             </div>
           </div>

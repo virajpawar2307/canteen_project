@@ -20,6 +20,10 @@ const orderSchema = new mongoose.Schema(
     items: { type: [orderItemSchema], default: [] },
     amount: { type: Number, required: true, min: 0 },
     status: { type: String, enum: ['Pending', 'Processed'], default: 'Pending' },
+    placedForGuest: { type: Boolean, default: false },
+    placedByVoucherCode: { type: String, default: null, uppercase: true, trim: true },
+    placedByName: { type: String, default: null, trim: true },
+    placedViaGuestPassId: { type: mongoose.Schema.Types.ObjectId, ref: 'GuestPass', default: null },
   },
   { timestamps: true }
 );
