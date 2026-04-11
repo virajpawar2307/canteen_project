@@ -514,10 +514,10 @@ const CoordinatorDashboard = () => {
             .field-label { font-weight: 900; text-transform: uppercase; color: #000; letter-spacing: 0.25px; }
             .dept-line { margin: 0 0 10px; font-weight: 800; font-size: 11px; color: #101010; }
             .section { margin-top: 10px; }
-            .section-head { background: #1f3b78; color: #fff; font-weight: 900; padding: 5px 7px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.25px; }
+            .section-head { background: #000; color: #fff; font-weight: 900; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
             table { width: 100%; border-collapse: collapse; table-layout: fixed; }
             th, td { border: 1px solid #565656; padding: 6px 6px; vertical-align: top; }
-            th { background: #2a4f96; color: #fff; font-size: 10px; font-weight: 900; }
+            th { background: #000; color: #fff; font-size: 11px; font-weight: 900; }
             td { font-size: 10px; }
             thead { display: table-header-group; }
             tr { page-break-inside: avoid; break-inside: avoid-page; }
