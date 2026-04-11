@@ -104,7 +104,8 @@ const normalizePhone = (phone = '') => {
   return digits || String(phone || '').trim();
 };
 
-const buildPhoneRangeKey = (phone, fromDate, toDate) => `${normalizePhone(phone)}|${String(fromDate || '').trim()}|${String(toDate || '').trim()}`;
+const buildPhoneRangeKey = (phone, fromDate, toDate, category = '') =>
+  `${normalizePhone(phone)}|${String(fromDate || '').trim()}|${String(toDate || '').trim()}|${String(category || '').trim().toLowerCase()}`;
 
 const generateUniqueInternalVoucherCode = async (deptCode, reservedCodes = new Set()) => {
   const normalizedDept = String(deptCode || '').toUpperCase();
@@ -159,7 +160,7 @@ const createManualVoucher = async (req, res) => {
       existingCodeByPhone.set(existingPhoneKey, voucher.code);
     }
 
-    const rangeKey = buildPhoneRangeKey(voucher.phone, voucher.fromDate, voucher.toDate);
+    const rangeKey = buildPhoneRangeKey(voucher.phone, voucher.fromDate, voucher.toDate, voucher.category);
     if (!voucherByPhoneRange.has(rangeKey)) {
       voucherByPhoneRange.set(rangeKey, voucher);
     }
@@ -167,7 +168,7 @@ const createManualVoucher = async (req, res) => {
 
   const code = existingCodeByPhone.get(phoneKey) || (await generateUniqueInternalVoucherCode(deptCode, reservedCodes));
 
-  const rangeKey = buildPhoneRangeKey(phone, fromDate, toDate);
+  const rangeKey = buildPhoneRangeKey(phone, fromDate, toDate, normalizedCategory);
   const existingForRange = voucherByPhoneRange.get(rangeKey);
 
   if (existingForRange) {
@@ -238,7 +239,7 @@ const bulkCreateVouchers = async (req, res) => {
       existingCodeByPhone.set(existingPhoneKey, voucher.code);
     }
 
-    const rangeKey = buildPhoneRangeKey(voucher.phone, voucher.fromDate, voucher.toDate);
+    const rangeKey = buildPhoneRangeKey(voucher.phone, voucher.fromDate, voucher.toDate, voucher.category);
     if (!existingVoucherByRange.has(rangeKey)) {
       existingVoucherByRange.set(rangeKey, voucher);
     }
@@ -256,7 +257,8 @@ const bulkCreateVouchers = async (req, res) => {
       continue;
     }
 
-    const rangeKey = buildPhoneRangeKey(entry.phone, entry.fromDate, entry.toDate);
+    const entryCategory = normalizeSubjectName(entry.category) || 'Uncategorized';
+    const rangeKey = buildPhoneRangeKey(entry.phone, entry.fromDate, entry.toDate, entryCategory);
     if (seenBatchRangeKeys.has(rangeKey)) {
       skippedCount += 1;
       continue;
@@ -279,7 +281,7 @@ const bulkCreateVouchers = async (req, res) => {
               fromDate: entry.fromDate,
               toDate: entry.toDate,
               subjectName: normalizeSubjectName(entry.subjectName) || normalizeSubjectName(entry.items) || 'N/A',
-              category: normalizeSubjectName(entry.category) || 'Uncategorized',
+              category: entryCategory,
               type: 'Internal',
               items: entry.items || 'Pending',
               amount: Number.isFinite(entry.amount) ? entry.amount : 0,
@@ -301,7 +303,7 @@ const bulkCreateVouchers = async (req, res) => {
       fromDate: entry.fromDate,
       toDate: entry.toDate,
       subjectName: normalizeSubjectName(entry.subjectName) || normalizeSubjectName(entry.items) || 'N/A',
-      category: normalizeSubjectName(entry.category) || 'Uncategorized',
+      category: entryCategory,
       type: 'Internal',
       items: entry.items || 'Pending',
       amount: Number.isFinite(entry.amount) ? entry.amount : 0,

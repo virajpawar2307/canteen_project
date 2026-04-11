@@ -321,7 +321,7 @@ const CoordinatorDashboard = () => {
       try {
         const response = await bulkCreateCoordinatorVouchers(newEntries);
         setExaminers(response.vouchers || []);
-        setSelectedVoucherCategory(selectedCategory);
+        setSelectedVoucherCategory((currentCategory) => currentCategory || selectedCategory);
         setExcelFile(null);
         const createdCount = Number(response?.createdCount || 0);
         const updatedCount = Number(response?.updatedCount || 0);
