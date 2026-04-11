@@ -313,6 +313,12 @@ const CoordinatorDashboard = () => {
     return `${day}-${month}-${year}`;
   };
 
+  const dashboardStats = [
+    { label: 'Generated vouchers', value: examiners.length, tone: 'from-pict-blue to-indigo-500' },
+    { label: 'External vouchers', value: externalVouchers.length, tone: 'from-emerald-500 to-teal-500' },
+    { label: 'Report rows', value: reportData.internal.length + reportData.external.length, tone: 'from-amber-500 to-orange-500' },
+  ];
+
   const normalizedVoucherSearch = voucherSearch.trim().toLowerCase();
   const filteredExaminers = examiners.filter((exam) => {
     if (!normalizedVoucherSearch) return true;
@@ -464,48 +470,78 @@ const CoordinatorDashboard = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F0F2F5] font-sans">
+    <div className="relative flex min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(45,62,139,0.12),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_24%),linear-gradient(180deg,_#F8FAFF_0%,_#EEF3FF_100%)] font-sans text-pict-text">
+      <div className="pointer-events-none absolute -top-24 right-[-5rem] h-72 w-72 rounded-full bg-pict-blue/10 blur-3xl"></div>
+      <div className="pointer-events-none absolute left-[-6rem] top-1/3 h-80 w-80 rounded-full bg-cyan-200/25 blur-3xl"></div>
       {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={toggleSidebar} />}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-pict-blue text-white flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static shadow-2xl`}>
-        <div className="p-8 border-b border-white/10 text-left">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[linear-gradient(180deg,_#2D3E8B_0%,_#1F2B66_100%)] text-white flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static shadow-[18px_0_60px_rgba(18,28,74,0.22)] backdrop-blur-xl border-r border-white/10`}>
+        <div className="p-8 border-b border-white/10 text-left bg-white/5">
           <div className="flex items-start justify-between gap-3">
-            <div className="bg-white p-3 rounded-xl shadow-lg inline-block mb-4"><img src={LogoImg} className="h-8 w-auto" alt="PICT" /></div>
+            <div className="bg-white p-3 rounded-2xl shadow-lg inline-block mb-4 ring-1 ring-white/15"><img src={LogoImg} className="h-8 w-auto" alt="PICT" /></div>
             <button
               onClick={toggleSidebar}
-              className="lg:hidden p-2 rounded-lg bg-white/10 text-white"
+              className="lg:hidden p-2 rounded-xl bg-white/10 text-white"
               aria-label="Close menu"
             >
               <X size={18} />
             </button>
           </div>
-          <h2 className="text-sm font-black text-blue-100 uppercase">{dept}</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-200/80 mb-2">Coordinator View</p>
+          <h2 className="text-sm font-black text-white uppercase tracking-wide">{dept}</h2>
         </div>
         <nav className="flex-1 p-6 space-y-3 text-left">
-          <button onClick={() => {setActiveTab('dashboard'); setSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'dashboard' ? 'bg-white/10 border-l-4 border-blue-400 text-white' : 'text-white/60 hover:text-white'}`}><LayoutDashboard size={18} /> Dashboard</button>
-          <button onClick={() => {setActiveTab('external-vouchers'); setSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'external-vouchers' ? 'bg-white/10 border-l-4 border-emerald-400 text-white' : 'text-white/60 hover:text-white'}`}><Ticket size={18} /> External Vouchers</button>
-          <button onClick={() => {setActiveTab('reports'); setSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'reports' ? 'bg-white/10 border-l-4 border-purple-400 text-white' : 'text-white/60 hover:text-white'}`}><FileText size={18} /> View Reports</button>
+          <button onClick={() => {setActiveTab('dashboard'); setSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold transition-all border ${activeTab === 'dashboard' ? 'bg-white/12 border-white/15 text-white shadow-lg shadow-black/10' : 'border-transparent text-white/65 hover:bg-white/8 hover:text-white'}`}><LayoutDashboard size={18} /> Dashboard</button>
+          <button onClick={() => {setActiveTab('external-vouchers'); setSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold transition-all border ${activeTab === 'external-vouchers' ? 'bg-white/12 border-white/15 text-white shadow-lg shadow-black/10' : 'border-transparent text-white/65 hover:bg-white/8 hover:text-white'}`}><Ticket size={18} /> External Vouchers</button>
+          <button onClick={() => {setActiveTab('reports'); setSidebarOpen(false);}} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold transition-all border ${activeTab === 'reports' ? 'bg-white/12 border-white/15 text-white shadow-lg shadow-black/10' : 'border-transparent text-white/65 hover:bg-white/8 hover:text-white'}`}><FileText size={18} /> View Reports</button>
         </nav>
-        <div className="p-6 border-t border-white/10 text-left"><button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-4 bg-red-500/10 text-red-400 rounded-xl text-xs font-black"><LogOut size={18} /> Sign Out</button></div>
+        <div className="p-6 border-t border-white/10 text-left bg-white/5"><button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-4 bg-red-500/10 text-red-300 rounded-2xl text-xs font-black transition-all hover:bg-red-500/20"><LogOut size={18} /> Sign Out</button></div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="lg:hidden flex items-center justify-between bg-white px-4 sm:px-6 py-4 border-b sticky top-0 z-30 shadow-sm">
+      <main className="relative flex-1 overflow-y-auto">
+        <div className="lg:hidden flex items-center justify-between bg-white/90 backdrop-blur-xl px-4 sm:px-6 py-4 border-b border-white/70 sticky top-0 z-30 shadow-sm">
           <img src={LogoImg} className="h-8 w-auto" alt="PICT" />
-          <button onClick={toggleSidebar} className="p-2 bg-pict-blue text-white rounded-lg" aria-label="Open menu">
+          <button onClick={toggleSidebar} className="p-2 bg-pict-blue text-white rounded-xl shadow-lg shadow-pict-blue/20" aria-label="Open menu">
             <Menu size={24} />
           </button>
         </div>
 
         <div className="p-4 sm:p-6 md:p-10 lg:p-14 text-left">
+          <div className="mb-8 rounded-[2rem] border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_20px_60px_rgba(45,62,139,0.08)] p-6 sm:p-8 overflow-hidden relative">
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,_rgba(45,62,139,0.05),_transparent_45%,_rgba(14,165,233,0.08))]" />
+            <div className="relative flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-pict-blue/70 mb-3">Coordinator Workspace</p>
+                <h1 className="text-3xl md:text-4xl font-black text-pict-text uppercase tracking-tight">Voucher Management</h1>
+                <p className="mt-3 max-w-2xl text-sm md:text-[15px] leading-6 text-slate-500 font-medium">
+                  Manage generated vouchers, review guest access, and track department billing from one polished control panel.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:w-auto">
+                {dashboardStats.map((stat) => (
+                  <div key={stat.label} className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm min-w-[160px]">
+                    <div className={`inline-flex items-center rounded-full bg-gradient-to-r ${stat.tone} px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm`}>
+                      {stat.label}
+                    </div>
+                    <p className="mt-3 text-3xl font-black text-pict-text">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
           
           {activeTab === 'dashboard' && (
             <div className="animate-in fade-in">
-              <h1 className="text-2xl md:text-3xl font-black text-pict-text uppercase mb-8">Voucher Management</h1>
-              
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
-                <div className="xl:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8">
-                  <h3 className="text-xs font-black text-pict-text uppercase tracking-widest mb-8">Bulk Import (Excel)</h3>
+                <div className="xl:col-span-2 rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] p-8 relative overflow-hidden">
+                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-pict-blue via-indigo-400 to-cyan-300"></div>
+                  <div className="flex items-center justify-between gap-4 mb-8">
+                    <div>
+                      <h3 className="text-xs font-black text-pict-text uppercase tracking-[0.24em]">Bulk Import (Excel)</h3>
+                      <p className="text-[11px] font-medium text-slate-500 mt-2">Upload a sheet and generate vouchers with a cleaner import experience.</p>
+                    </div>
+                    <div className="hidden md:flex items-center gap-2 rounded-full bg-pict-light-blue px-4 py-2 text-[10px] font-black uppercase tracking-widest text-pict-blue">Fast entry</div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div className="space-y-2">
                       <select
@@ -517,7 +553,7 @@ const CoordinatorDashboard = () => {
                             setCustomExamCategory('');
                           }
                         }}
-                        className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-3xl text-sm font-bold shadow-sm outline-none focus:border-pict-blue focus:bg-white"
                       >
                         <option value="">Select Category...</option>
                         {EXAM_CATEGORY_OPTIONS.map((option) => (
@@ -530,39 +566,39 @@ const CoordinatorDashboard = () => {
                           value={customExamCategory}
                           onChange={(e) => setCustomExamCategory(e.target.value)}
                           placeholder="Type custom category"
-                          className="w-full p-4 bg-slate-50 border rounded-2xl text-sm font-bold"
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-3xl text-sm font-bold shadow-sm outline-none focus:border-pict-blue focus:bg-white"
                         />
                       )}
                     </div>
-                    <label className={`flex items-center justify-center gap-3 p-3.5 border-2 border-dashed rounded-2xl cursor-pointer ${excelFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200'}`}><FileSpreadsheet size={20} className="text-pict-blue" /><span className="text-sm font-bold truncate">{excelFile ? excelFile.name : "Attach Spreadsheet"}</span><input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => setExcelFile(e.target.files[0])} /></label>
+                    <label className={`flex items-center justify-center gap-3 p-4 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${excelFile ? 'border-emerald-400 bg-emerald-50 shadow-sm' : 'border-slate-200 bg-slate-50/70 hover:bg-white'}`}><FileSpreadsheet size={20} className="text-pict-blue" /><span className="text-sm font-bold truncate">{excelFile ? excelFile.name : "Attach Spreadsheet"}</span><input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => setExcelFile(e.target.files[0])} /></label>
                   </div>
-                  <button onClick={handleExcelUpload} className="w-full bg-pict-blue text-white py-4.5 rounded-2xl font-black text-xs uppercase shadow-xl">Generate Vouchers</button>
+                  <button onClick={handleExcelUpload} className="w-full bg-[linear-gradient(135deg,_#2D3E8B_0%,_#4157B3_100%)] text-white py-4.5 rounded-3xl font-black text-xs uppercase shadow-[0_18px_40px_rgba(45,62,139,0.25)] transition-transform active:scale-[0.99]">Generate Vouchers</button>
                 </div>
 
-                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8">
-                  <h3 className="text-xs font-black text-pict-text uppercase tracking-widest mb-8">Manual Entry</h3>
+                <div className="rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] p-8">
+                  <h3 className="text-xs font-black text-pict-text uppercase tracking-[0.24em] mb-8">Manual Entry</h3>
                   <div className="space-y-4">
-                    <input type="text" placeholder="Full Name" value={manualEntry.name} onChange={e => setManualEntry({...manualEntry, name: e.target.value})} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
-                    <input type="email" placeholder="Email Address" value={manualEntry.email} onChange={e => setManualEntry({...manualEntry, email: e.target.value})} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
-                    <input type="text" placeholder="Phone Number" value={manualEntry.phone} onChange={e => setManualEntry({...manualEntry, phone: e.target.value})} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+                    <input type="text" placeholder="Full Name" value={manualEntry.name} onChange={e => setManualEntry({...manualEntry, name: e.target.value})} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:border-pict-blue" />
+                    <input type="email" placeholder="Email Address" value={manualEntry.email} onChange={e => setManualEntry({...manualEntry, email: e.target.value})} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:border-pict-blue" />
+                    <input type="text" placeholder="Phone Number" value={manualEntry.phone} onChange={e => setManualEntry({...manualEntry, phone: e.target.value})} className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:border-pict-blue" />
                     <div className="grid grid-cols-2 gap-3">
-                      <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">From</p><input type="date" value={manualEntry.fromDate} onChange={e => setManualEntry({...manualEntry, fromDate: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold" /></div>
-                      <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">To</p><input type="date" value={manualEntry.toDate} onChange={e => setManualEntry({...manualEntry, toDate: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold" /></div>
+                      <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">From</p><input type="date" value={manualEntry.fromDate} onChange={e => setManualEntry({...manualEntry, fromDate: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
+                      <div><p className="text-[9px] font-black text-slate-400 uppercase mb-1 ml-1">To</p><input type="date" value={manualEntry.toDate} onChange={e => setManualEntry({...manualEntry, toDate: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
                     </div>
-                    <button onClick={handleAddManual} className="w-full border-2 border-pict-blue text-pict-blue py-3.5 rounded-xl font-black text-[10px] uppercase transition-all hover:bg-pict-blue hover:text-white">Add Entry</button>
+                    <button onClick={handleAddManual} className="w-full border-2 border-pict-blue text-pict-blue py-3.5 rounded-2xl font-black text-[10px] uppercase transition-all hover:bg-pict-blue hover:text-white shadow-sm">Add Entry</button>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-8 py-6 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-slate-50/50">
+              <div className="rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-200/80 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-[linear-gradient(180deg,_rgba(248,250,255,0.96),_rgba(255,255,255,0.96))]">
                   <h3 className="text-xs font-black text-pict-text uppercase tracking-widest">Generated Vouchers</h3>
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <button onClick={handleDownloadExcel} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-pict-blue uppercase shadow-sm"><Download size={14} /> Download</button>
-                    <button onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[10px] font-black uppercase shadow-sm"><Eraser size={14} /> Clear All</button>
+                    <button onClick={handleDownloadExcel} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-pict-blue uppercase shadow-sm transition-all hover:shadow-md"><Download size={14} /> Download</button>
+                    <button onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-2xl text-[10px] font-black uppercase shadow-sm transition-all hover:bg-red-100"><Eraser size={14} /> Clear All</button>
                   </div>
                 </div>
-                <div className="px-8 py-4 border-b bg-white">
+                <div className="px-8 py-5 border-b border-slate-100 bg-white/80">
                   <div className="relative max-w-md">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
@@ -570,14 +606,14 @@ const CoordinatorDashboard = () => {
                       value={voucherSearch}
                       onChange={(e) => setVoucherSearch(e.target.value)}
                       placeholder="Search by name, code, phone..."
-                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue shadow-sm"
                     />
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left min-w-[760px]">
+                  <table className="w-full text-left min-w-190">
                     <thead>
-                      <tr className="border-b bg-white text-[10px] font-black text-slate-400 uppercase">
+                      <tr className="border-b border-slate-100 bg-slate-50/80 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                         <th className="px-6 py-5">Examiner Name</th>
                         <th className="px-6">Voucher Code</th>
                         <th className="px-6">Phone</th>
@@ -589,7 +625,7 @@ const CoordinatorDashboard = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {filteredExaminers.map(ex => (
-                        <tr key={ex._id} className="hover:bg-slate-50 transition-all">
+                        <tr key={ex._id} className="hover:bg-slate-50/70 transition-all">
                           <td className="px-6 py-5"><p className="font-bold text-sm text-pict-text">{ex.name}</p></td>
                           <td className="px-6 font-mono font-black text-xs text-pict-blue uppercase"><Hash size={12} className="inline mr-1" />{ex.code}</td>
                           <td className="px-6 text-xs font-bold text-slate-600">{ex.phone || 'N/A'}</td>
@@ -629,16 +665,16 @@ const CoordinatorDashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-4 sm:p-6 lg:p-8 mb-8">
+              <div className="rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] p-4 sm:p-6 lg:p-8 mb-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-left">
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Start Date</label><input type="date" value={reportFilters.startDate} onChange={(e) => setReportFilters({...reportFilters, startDate: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">End Date</label><input type="date" value={reportFilters.endDate} onChange={(e) => setReportFilters({...reportFilters, endDate: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Department</label><div className="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-black text-pict-blue">{deptCode}</div></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Type</label><select value={reportFilters.examinerType} onChange={(e) => setReportFilters({...reportFilters, examinerType: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold"><option>Both (Internal & External)</option><option>Internal</option><option>External</option></select></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Start Date</label><input type="date" value={reportFilters.startDate} onChange={(e) => setReportFilters({...reportFilters, startDate: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">End Date</label><input type="date" value={reportFilters.endDate} onChange={(e) => setReportFilters({...reportFilters, endDate: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Department</label><div className="w-full p-4 bg-pict-light-blue border border-slate-200 rounded-2xl text-sm font-black text-pict-blue">{deptCode}</div></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase">Type</label><select value={reportFilters.examinerType} onChange={(e) => setReportFilters({...reportFilters, examinerType: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue"><option>Both (Internal & External)</option><option>Internal</option><option>External</option></select></div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-4 sm:p-8 lg:p-12 max-w-5xl mx-auto overflow-hidden print:shadow-none print:border-none">
+              <div className="rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] p-4 sm:p-8 lg:p-12 max-w-5xl mx-auto overflow-hidden print:shadow-none print:border-none">
                 <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
                   <h1 className="text-xl font-black text-slate-900 uppercase">SCTR'S PUNE INSTITUTE OF COMPUTER TECHNOLOGY</h1>
                   <h2 className="text-sm font-bold text-slate-600">Office of the Mess & Canteen Section</h2>
@@ -648,24 +684,24 @@ const CoordinatorDashboard = () => {
                   <div className="text-left space-y-1"><p>Ref No: PICT/CNTN/2026/042</p><p>Department: {deptCode}</p></div>
                   <div className="text-right"><p>Period: {formatDateForDisplay(reportFilters.startDate)} to {formatDateForDisplay(reportFilters.endDate)}</p></div>
                 </div>
-                <div className="bg-slate-100 p-2 font-black text-sm border border-slate-900 mb-2 text-left uppercase">SECTION A: FACULTY CONSUMPTION</div>
+                <div className="bg-slate-100 p-2 font-black text-sm border border-slate-900 mb-2 text-left uppercase tracking-wide">SECTION A: FACULTY CONSUMPTION</div>
                 <table className="w-full border-collapse border border-slate-900 mb-2 text-xs">
                   <thead className="bg-slate-50"><tr><th className="border border-slate-900 p-2 text-center">Sr</th><th className="border border-slate-900 p-2">Order ID</th><th className="border border-slate-900 p-2">Faculty Name</th><th className="border border-slate-900 p-2">Subject Name</th><th className="border border-slate-900 p-2">Date</th><th className="border border-slate-900 p-2">Time</th><th className="border border-slate-900 p-2">Items Consumed</th><th className="border border-slate-900 p-2 text-right">Total (Rs)</th></tr></thead>
-                  <tbody>{reportData.internal.length > 0 ? reportData.internal.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2 break-words max-w-[220px]">{o.subjectName || 'N/A'}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="8" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
+                  <tbody>{reportData.internal.length > 0 ? reportData.internal.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2 wrap-break-word max-w-55">{o.subjectName || 'N/A'}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="8" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
                 </table>
-                <div className="text-right font-black text-sm p-2 border border-slate-900 border-t-0 mb-6 uppercase">Sub-Total (Faculty): Rs. {reportData.internalTotal}/-</div>
-                <div className="bg-slate-100 p-2 font-black text-sm border border-slate-900 mb-2 text-left uppercase">SECTION B: GUEST/EXTERNAL CONSUMPTION</div>
+                <div className="text-right font-black text-sm p-2 border border-slate-900 border-t-0 mb-6 uppercase tracking-wide">Sub-Total (Faculty): Rs. {reportData.internalTotal}/-</div>
+                <div className="bg-slate-100 p-2 font-black text-sm border border-slate-900 mb-2 text-left uppercase tracking-wide">SECTION B: GUEST/EXTERNAL CONSUMPTION</div>
                 <table className="w-full border-collapse border border-slate-900 mb-2 text-xs">
                   <thead className="bg-slate-50"><tr><th className="border border-slate-900 p-2 text-center">Sr</th><th className="border border-slate-900 p-2">Order ID</th><th className="border border-slate-900 p-2">Guest Name</th><th className="border border-slate-900 p-2">Subject Name</th><th className="border border-slate-900 p-2">Date</th><th className="border border-slate-900 p-2">Time</th><th className="border border-slate-900 p-2">Items Consumed</th><th className="border border-slate-900 p-2 text-right">Total (Rs)</th></tr></thead>
-                  <tbody>{reportData.external.length > 0 ? reportData.external.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2 break-words max-w-[220px]">{o.subjectName || 'N/A'}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="8" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
+                  <tbody>{reportData.external.length > 0 ? reportData.external.map((o, i) => (<tr key={o.id}><td className="border border-slate-900 p-2 text-center">{i+1}</td><td className="border border-slate-900 p-2 font-mono">{o.id}</td><td className="border border-slate-900 p-2 font-bold">{o.name}</td><td className="border border-slate-900 p-2 wrap-break-word max-w-55">{o.subjectName || 'N/A'}</td><td className="border border-slate-900 p-2">{o.date}</td><td className="border border-slate-900 p-2">{o.time || ''}</td><td className="border border-slate-900 p-2">{o.items}</td><td className="border border-slate-900 p-2 font-black text-right">Rs. {o.amount}</td></tr>)) : (<tr><td colSpan="8" className="border border-slate-900 p-4 text-center">No Records.</td></tr>)}</tbody>
                 </table>
-                <div className="text-right font-black text-sm p-2 border border-slate-900 border-t-0 mb-6 uppercase">Sub-Total (Guest): Rs. {reportData.externalTotal}/-</div>
-                <div className="flex justify-between items-center border-2 border-slate-900 p-4 font-black text-lg"><span>GRAND TOTAL</span><span>Rs. {reportData.grandTotal}</span></div>
+                <div className="text-right font-black text-sm p-2 border border-slate-900 border-t-0 mb-6 uppercase tracking-wide">Sub-Total (Guest): Rs. {reportData.externalTotal}/-</div>
+                <div className="flex justify-between items-center border-2 border-slate-900 p-4 font-black text-lg tracking-wide rounded-xl bg-white"><span>GRAND TOTAL</span><span>Rs. {reportData.grandTotal}</span></div>
                 <div className="flex flex-col sm:flex-row justify-between mt-12 sm:mt-16 px-2 sm:px-10 gap-6 sm:gap-0">
                   <div className="text-center"><div className="w-32 border-t border-slate-900 mb-1 mx-auto"></div><p className="text-[10px] font-black uppercase">MESS MANAGER</p><p className="text-[9px] text-slate-400">Sign & Seal</p></div>
                   <div className="text-center"><div className="w-32 border-t border-slate-900 mb-1 mx-auto"></div><p className="text-[10px] font-black uppercase">HEAD OF DEPARTMENT</p><p className="text-[9px] text-slate-400">Dept. of {deptCode}</p></div>
                 </div>
-                <div className="mt-10 pt-4 border-t border-slate-200 text-[8px] text-center text-slate-400 font-bold uppercase tracking-tighter">THIS IS A SYSTEM-GENERATED STATEMENT FOR INTERNAL ACCOUNTING AND AUDIT PURPOSES.</div>
+                <div className="mt-10 pt-4 border-t border-slate-200 text-[8px] text-center text-slate-400 font-bold uppercase tracking-[0.2em]">THIS IS A SYSTEM-GENERATED STATEMENT FOR INTERNAL ACCOUNTING AND AUDIT PURPOSES.</div>
               </div>
             </div>
           )}
@@ -682,8 +718,8 @@ const CoordinatorDashboard = () => {
                 </button>
               </div>
 
-              <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-8 py-4 border-b bg-white">
+              <div className="rounded-4xl border border-white/70 bg-white/90 backdrop-blur-xl shadow-[0_18px_50px_rgba(45,62,139,0.08)] overflow-hidden">
+                <div className="px-8 py-5 border-b border-slate-100 bg-white/80">
                   <div className="relative max-w-md">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
@@ -691,14 +727,14 @@ const CoordinatorDashboard = () => {
                       value={externalVoucherSearch}
                       onChange={(e) => setExternalVoucherSearch(e.target.value)}
                       placeholder="Search by guest name, code, faculty name..."
-                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue"
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-pict-blue shadow-sm"
                     />
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left min-w-[920px]">
+                  <table className="w-full text-left min-w-230">
                     <thead>
-                      <tr className="border-b bg-white text-[10px] font-black text-slate-400 uppercase">
+                      <tr className="border-b border-slate-100 bg-slate-50/80 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                         <th className="px-6 py-5">Guest Name</th>
                         <th className="px-6">Guest Voucher</th>
                         <th className="px-6">Faculty Name</th>
@@ -711,7 +747,7 @@ const CoordinatorDashboard = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {filteredExternalVouchers.map((voucher) => (
-                        <tr key={voucher._id} className="hover:bg-slate-50 transition-all">
+                        <tr key={voucher._id} className="hover:bg-slate-50/70 transition-all">
                           <td className="px-6 py-5"><p className="font-bold text-sm text-pict-text">{voucher.name}</p></td>
                           <td className="px-6 font-mono font-black text-xs text-emerald-700 uppercase"><Hash size={12} className="inline mr-1" />{voucher.code}</td>
                           <td className="px-6 text-xs font-bold text-slate-700">{voucher.createdByName || 'N/A'}</td>
