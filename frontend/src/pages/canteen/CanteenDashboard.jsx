@@ -386,36 +386,41 @@ const CanteenDashboard = () => {
           <head>
             <title>Canteen_Billing_Report</title>
             <style>
-              @page { size: A4; margin: 12mm; }
-              body { font-family: Arial, sans-serif; font-size: 10px; color: #111; line-height: 1.25; margin: 0; }
-              .sheet { position: relative; border: 1px solid #2f2f2f; padding: 12px; min-height: calc(297mm - 24mm); box-sizing: border-box; overflow: hidden; }
+              @page { size: A4; margin: 10mm; }
+              body { font-family: Arial, sans-serif; font-size: 11px; color: #111; line-height: 1.35; margin: 0; }
+              .sheet { position: relative; border: 1px solid #2f2f2f; padding: 14px; min-height: calc(297mm - 20mm); box-sizing: border-box; overflow: hidden; }
               .watermark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-              .watermark img { width: 380px; opacity: 0.08; }
-              .content { position: relative; z-index: 2; }
-              .header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-              .logo { width: 48px; height: 48px; object-fit: contain; }
-              .inst h1 { font-size: 18px; margin: 0; font-weight: 800; }
-              .inst p { font-size: 11px; margin: 2px 0 0; font-weight: 600; }
-              .title { border: 2px solid #1f1f1f; text-align: center; font-size: 12px; font-weight: 800; padding: 4px 6px; margin: 8px auto 10px; width: 56%; }
-              .meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 700; }
-              .dept-line { margin: 0 0 8px; font-weight: 700; }
-              .section { margin-top: 8px; }
-              .section-head { background: #2a2a2a; color: #fff; font-weight: 800; padding: 4px 6px; font-size: 10px; text-transform: uppercase; }
-              table { width: 100%; border-collapse: collapse; }
-              th, td { border: 1px solid #565656; padding: 4px 5px; vertical-align: top; }
-              th { background: #3c3c3c; color: #fff; font-size: 9px; font-weight: 800; }
-              td { font-size: 9px; }
+              .watermark img { width: 390px; opacity: 0.07; }
+              .content { position: relative; z-index: 2; min-height: 100%; display: flex; flex-direction: column; }
+              .header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+              .logo { width: 52px; height: 52px; object-fit: contain; }
+              .inst h1 { font-size: 20px; margin: 0; font-weight: 800; letter-spacing: 0.1px; }
+              .inst p { font-size: 12px; margin: 2px 0 0; font-weight: 600; }
+              .title { border: 2px solid #1f1f1f; text-align: center; font-size: 13px; font-weight: 800; padding: 5px 8px; margin: 8px auto 12px; width: 60%; }
+              .meta { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-weight: 700; font-size: 11px; }
+              .dept-line { margin: 0 0 10px; font-weight: 700; font-size: 11px; }
+              .section { margin-top: 10px; }
+              .section-head { background: #2a2a2a; color: #fff; font-weight: 800; padding: 5px 7px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.25px; }
+              table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+              th, td { border: 1px solid #565656; padding: 6px 6px; vertical-align: top; }
+              th { background: #3c3c3c; color: #fff; font-size: 10px; font-weight: 800; }
+              td { font-size: 10px; }
               .text-center { text-align: center; }
               .text-right { text-align: right; }
-              .subtotal { text-align: right; font-size: 13px; font-weight: 800; margin: 4px 0 10px; }
-              .grand-wrap { display: flex; justify-content: flex-end; margin: 4px 0 14px; }
-              .grand-box { border: 2px solid #222; min-width: 170px; display: flex; justify-content: space-between; padding: 4px 8px; font-weight: 800; font-size: 14px; }
-              .sign-grid-3 { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-              .sign-grid-2 { margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; max-width: 70%; margin-left: auto; margin-right: auto; }
+              .date-cell { white-space: nowrap; }
+              .name-cell small { font-size: 8px; color: #4b5563; }
+              .subject-cell { word-break: break-word; }
+              .items-cell { word-break: break-word; }
+              .subtotal { text-align: right; font-size: 14px; font-weight: 800; margin: 6px 0 12px; }
+              .grand-wrap { display: flex; justify-content: flex-end; margin: 6px 0 0; }
+              .grand-box { border: 2px solid #222; min-width: 220px; display: flex; justify-content: space-between; padding: 6px 10px; font-weight: 800; font-size: 15px; }
+              .signatures { margin-top: auto; }
+              .sign-grid-3 { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+              .sign-grid-2 { margin-top: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 46px; max-width: 70%; margin-left: auto; margin-right: auto; }
               .sign { text-align: center; }
-              .sign-line { border-top: 2px solid #4a4a4a; margin-bottom: 4px; }
-              .sign label { font-size: 9px; font-weight: 800; text-transform: uppercase; }
-              .footer { margin-top: 18px; padding-top: 6px; border-top: 1px solid #8a8a8a; text-align: center; font-size: 8px; font-weight: 700; text-transform: uppercase; }
+              .sign-line { border-top: 2px solid #4a4a4a; margin-bottom: 5px; }
+              .sign label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2px; }
+              .footer { margin-top: 16px; padding-top: 6px; border-top: 1px solid #8a8a8a; text-align: center; font-size: 8px; font-weight: 700; text-transform: uppercase; }
             </style>
           </head>
           <body>
@@ -452,7 +457,7 @@ const CanteenDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      ${internal.length > 0 ? internal.map((o, i) => `<tr><td class="text-center">${i + 1}</td><td>${formatDateForDisplay(o.date)}<br/>${o.time || ''}</td><td>${o.name}<br/><small>ID: ${o.id}</small></td><td>${o.subjectName || 'N/A'}${o.dept ? `<br/><small>${o.dept}</small>` : ''}</td><td>${o.items}</td><td class="text-right">Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="6" class="text-center">No Records</td></tr>'}
+                      ${internal.length > 0 ? internal.map((o, i) => `<tr><td class="text-center">${i + 1}</td><td class="date-cell">${formatDateForDisplay(o.date)}<br/>${o.time || ''}</td><td class="name-cell">${o.name}<br/><small>ID: ${o.id}</small></td><td class="subject-cell">${o.subjectName || 'N/A'}${o.dept ? `<br/><small>${o.dept}</small>` : ''}</td><td class="items-cell">${o.items}</td><td class="text-right">Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="6" class="text-center">No Records</td></tr>'}
                     </tbody>
                   </table>
                   <div class="subtotal">Sub-Total (Faculty): Rs. ${internalTotal}/-</div>
@@ -472,7 +477,7 @@ const CanteenDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      ${external.length > 0 ? external.map((o, i) => `<tr><td class="text-center">${i + 1}</td><td>${formatDateForDisplay(o.date)}<br/>${o.time || ''}</td><td>${o.name}<br/><small>ID: ${o.id}</small></td><td>${o.subjectName || 'N/A'}${o.dept ? `<br/><small>${o.dept}</small>` : ''}</td><td>${o.items}</td><td class="text-right">Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="6" class="text-center">No Records</td></tr>'}
+                      ${external.length > 0 ? external.map((o, i) => `<tr><td class="text-center">${i + 1}</td><td class="date-cell">${formatDateForDisplay(o.date)}<br/>${o.time || ''}</td><td class="name-cell">${o.name}<br/><small>ID: ${o.id}</small></td><td class="subject-cell">${o.subjectName || 'N/A'}${o.dept ? `<br/><small>${o.dept}</small>` : ''}</td><td class="items-cell">${o.items}</td><td class="text-right">Rs. ${o.amount}</td></tr>`).join('') : '<tr><td colspan="6" class="text-center">No Records</td></tr>'}
                     </tbody>
                   </table>
                   <div class="subtotal">Sub-Total (Guest): Rs. ${externalTotal}/-</div>
@@ -485,14 +490,16 @@ const CanteenDashboard = () => {
                   </div>
                 </div>
 
-                <div class="sign-grid-3">
-                  <div class="sign"><div class="sign-line"></div><label>Mess Manager</label></div>
-                  <div class="sign"><div class="sign-line"></div><label>Practical Coordinator</label></div>
-                  <div class="sign"><div class="sign-line"></div><label>Head of Department</label></div>
-                </div>
-                <div class="sign-grid-2">
-                  <div class="sign"><div class="sign-line"></div><label>CEO</label></div>
-                  <div class="sign"><div class="sign-line"></div><label>Principal</label></div>
+                <div class="signatures">
+                  <div class="sign-grid-3">
+                    <div class="sign"><div class="sign-line"></div><label>Mess Manager</label></div>
+                    <div class="sign"><div class="sign-line"></div><label>Practical Coordinator</label></div>
+                    <div class="sign"><div class="sign-line"></div><label>Head of Department</label></div>
+                  </div>
+                  <div class="sign-grid-2">
+                    <div class="sign"><div class="sign-line"></div><label>CEO</label></div>
+                    <div class="sign"><div class="sign-line"></div><label>Principal</label></div>
+                  </div>
                 </div>
 
                 <div class="footer">System Generated Report | PICT Canteen & Mess Section | Downloaded: ${generatedAt}</div>
